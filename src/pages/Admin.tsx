@@ -1,44 +1,28 @@
 
-import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AdminLogin } from '@/components/AdminLogin';
 import { AdminDashboard } from '@/components/AdminDashboard';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const Admin = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is already authenticated
-    const authToken = localStorage.getItem('adminAuth');
-    if (authToken) {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, []);
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth');
-    setIsAuthenticated(false);
-  };
+  const { user, isLoading } = useAdminAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-lg font-medium text-gray-700">Loading...</div>
+        </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return <AdminLogin onLogin={handleLogin} />;
+  if (!user) {
+    return <AdminLogin />;
   }
 
-  return <AdminDashboard onLogout={handleLogout} />;
+  return <AdminDashboard />;
 };
 
 export default Admin;

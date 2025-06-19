@@ -6,16 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Upload, Save, AlertCircle } from 'lucide-react';
+import { Wand2, Upload, Save, AlertCircle, Link2, FileText, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Blog {
   id: string;
   title: string;
   content: string;
   excerpt: string;
-  featuredImage: string;
-  publishedAt: string;
+  featured_image: string;
+  created_at: string;
   author: string;
   slug: string;
   status: 'published' | 'draft';
@@ -37,31 +38,7 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
   const [isPublishing, setIsPublishing] = useState(false);
   const { toast } = useToast();
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-  };
-
-  const generateExcerpt = (content: string) => {
-    const plainText = content.replace(/<[^>]*>/g, '');
-    return plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
-  };
-
   const rewriteWithAI = async () => {
-    const apiKey = localStorage.getItem('gemini_api_key');
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please set up your Gemini API key in Settings first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsRewriting(true);
     try {
       const sourceContent = inputType === 'url' ? url : rawText;
@@ -75,44 +52,24 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
         return;
       }
 
-      // Simulate AI rewriting (replace with actual Gemini API call)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock rewritten content
-      const rewrittenTitle = inputType === 'url' 
-        ? "AI-Powered Insights: " + url.split('/').pop()?.replace(/-/g, ' ') || "New Article"
-        : "AI-Enhanced Article: " + rawText.substring(0, 50) + "...";
-      
-      const rewrittenContent = `<h2>Introduction</h2>
-      
-<p>This article has been enhanced and rewritten using advanced AI technology to provide you with the most engaging and informative content possible.</p>
+      const { data, error } = await supabase.functions.invoke('gemini-rewrite', {
+        body: { content: sourceContent, inputType }
+      });
 
-<h2>Key Insights</h2>
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
-<p>${inputType === 'url' 
-  ? `Based on the content from ${url}, we've extracted the most valuable insights and presented them in a more accessible format.`
-  : rawText.substring(0, 200) + '...'
-}</p>
-
-<h2>Enhanced Analysis</h2>
-
-<p>Our AI has analyzed the original content and provided additional context, insights, and practical applications that make this information more valuable for readers.</p>
-
-<h2>Conclusion</h2>
-
-<p>This AI-enhanced version provides a comprehensive overview while maintaining the core message and adding valuable insights for better understanding.</p>`;
-
-      setTitle(rewrittenTitle);
-      setContent(rewrittenContent);
+      setTitle(data.title);
+      setContent(data.content);
       
       toast({
-        title: "Content Rewritten!",
-        description: "Your content has been successfully rewritten by AI. You can now edit it further.",
+        title: "Content Rewritten! ✨",
+        description: "Your content has been successfully enhanced by AI.",
       });
     } catch (error) {
       toast({
         title: "Rewriting Failed",
-        description: "There was an error rewriting your content. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error rewriting your content.",
         variant: "destructive",
       });
     }
@@ -131,80 +88,96 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
 
     setIsPublishing(true);
     
-    const newBlog: Blog = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      content: content.trim(),
-      excerpt: generateExcerpt(content),
-      featuredImage: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
-      publishedAt: new Date().toISOString(),
-      author: author.trim(),
-      slug: generateSlug(title),
-      status,
-    };
+    try {
+      const { data, error } = await supabase.functions.invoke('blog-operations', {
+        body: {
+          action: 'create',
+          title: title.trim(),
+          content: content.trim(),
+          featuredImage: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
+          author: author.trim(),
+          status
+        }
+      });
 
-    // Simulate saving
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    onBlogCreated(newBlog);
-    
-    // Reset form
-    setUrl('');
-    setRawText('');
-    setTitle('');
-    setContent('');
-    setFeaturedImage('');
-    
-    toast({
-      title: status === 'published' ? "Blog Published!" : "Draft Saved!",
-      description: `Your blog has been ${status === 'published' ? 'published successfully' : 'saved as a draft'}.`,
-    });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      onBlogCreated(data.blog);
+      
+      // Reset form
+      setUrl('');
+      setRawText('');
+      setTitle('');
+      setContent('');
+      setFeaturedImage('');
+      
+      toast({
+        title: status === 'published' ? "Blog Published! 🎉" : "Draft Saved! 📝",
+        description: `Your blog has been ${status === 'published' ? 'published successfully' : 'saved as a draft'}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Operation Failed",
+        description: error instanceof Error ? error.message : "There was an error saving your blog.",
+        variant: "destructive",
+      });
+    }
     
     setIsPublishing(false);
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-8">
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wand2 className="w-5 h-5" />
-            Create New Blog Post
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            Create AI-Powered Blog Post
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs value={inputType} onValueChange={(value) => setInputType(value as 'url' | 'text')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="text">Manual Text</TabsTrigger>
-              <TabsTrigger value="url">From URL</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="text" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Manual Text
+              </TabsTrigger>
+              <TabsTrigger value="url" className="flex items-center gap-2">
+                <Link2 className="w-4 h-4" />
+                From URL
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="url" className="space-y-4">
               <div>
-                <Label htmlFor="url">Article URL</Label>
+                <Label htmlFor="url" className="text-base font-medium">Article URL</Label>
                 <Input
                   id="url"
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://example.com/article"
+                  className="mt-2 h-12"
                 />
               </div>
               
               <Button 
                 onClick={rewriteWithAI} 
                 disabled={isRewriting || !url.trim()}
-                className="w-full"
+                className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-lg"
               >
                 {isRewriting ? (
                   <>
-                    <Wand2 className="w-4 h-4 mr-2 animate-spin" />
-                    Rewriting with AI...
+                    <Wand2 className="w-5 h-5 mr-2 animate-spin" />
+                    AI is Rewriting...
                   </>
                 ) : (
                   <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Rewrite with AI
+                    <Wand2 className="w-5 h-5 mr-2" />
+                    ✨ Rewrite with AI Magic
                   </>
                 )}
               </Button>
@@ -212,30 +185,31 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
             
             <TabsContent value="text" className="space-y-4">
               <div>
-                <Label htmlFor="rawText">Raw Text</Label>
+                <Label htmlFor="rawText" className="text-base font-medium">Raw Text Content</Label>
                 <Textarea
                   id="rawText"
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
                   placeholder="Paste your article content here..."
                   rows={6}
+                  className="mt-2"
                 />
               </div>
               
               <Button 
                 onClick={rewriteWithAI} 
                 disabled={isRewriting || !rawText.trim()}
-                className="w-full"
+                className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-lg"
               >
                 {isRewriting ? (
                   <>
-                    <Wand2 className="w-4 h-4 mr-2 animate-spin" />
-                    Rewriting with AI...
+                    <Wand2 className="w-5 h-5 mr-2 animate-spin" />
+                    AI is Rewriting...
                   </>
                 ) : (
                   <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Rewrite with AI
+                    <Wand2 className="w-5 h-5 mr-2" />
+                    ✨ Rewrite with AI Magic
                   </>
                 )}
               </Button>
@@ -245,60 +219,70 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
       </Card>
 
       {/* Editor Section */}
-      <Card>
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
-          <CardTitle>Edit & Publish</CardTitle>
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Edit className="w-5 h-5 text-blue-600" />
+            Edit & Publish
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title" className="text-base font-medium">Blog Title</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter blog title..."
+                placeholder="Enter an engaging title..."
+                className="mt-2 h-12"
               />
             </div>
             
             <div>
-              <Label htmlFor="author">Author</Label>
+              <Label htmlFor="author" className="text-base font-medium">Author</Label>
               <Input
                 id="author"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Author name..."
+                className="mt-2 h-12"
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="featuredImage">Featured Image URL</Label>
+            <Label htmlFor="featuredImage" className="text-base font-medium flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Featured Image URL
+            </Label>
             <Input
               id="featuredImage"
               value={featuredImage}
               onChange={(e) => setFeaturedImage(e.target.value)}
               placeholder="https://example.com/image.jpg (optional)"
+              className="mt-2 h-12"
             />
           </div>
 
           <div>
-            <Label htmlFor="content">Content</Label>
+            <Label htmlFor="content" className="text-base font-medium">Blog Content</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write or edit your blog content here..."
               rows={12}
+              className="mt-2"
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <Button 
               onClick={() => publishBlog('draft')}
               variant="outline"
               disabled={isPublishing}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-12 px-6 border-2"
             >
               <Save className="w-4 h-4" />
               Save as Draft
@@ -307,17 +291,17 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
             <Button 
               onClick={() => publishBlog('published')}
               disabled={isPublishing}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-12 px-6 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700"
             >
               {isPublishing ? (
                 <>
-                  <Upload className="w-4 h-4 animate-spin" />
+                  <Upload className="w-4 h-4 animate-pulse" />
                   Publishing...
                 </>
               ) : (
                 <>
                   <Upload className="w-4 h-4" />
-                  Publish Blog
+                  🚀 Publish Blog
                 </>
               )}
             </Button>
