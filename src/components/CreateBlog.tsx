@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Upload, Save, AlertCircle, Link2, FileText, Sparkles, Image as ImageIcon, Edit } from 'lucide-react';
+import { Wand2, Upload, Save, Link2, FileText, Sparkles, Image as ImageIcon, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -52,12 +52,28 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
         return;
       }
 
+      console.log('Starting AI rewrite with content:', sourceContent.substring(0, 100) + '...');
+
       const { data, error } = await supabase.functions.invoke('gemini-rewrite', {
         body: { content: sourceContent, inputType }
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      console.log('Gemini rewrite response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`API Error: ${error.message}`);
+      }
+      
+      if (data?.error) {
+        console.error('Gemini API error:', data.error);
+        throw new Error(data.error);
+      }
+
+      if (!data?.success || !data?.content) {
+        console.error('Invalid response from Gemini:', data);
+        throw new Error('Invalid response from AI service');
+      }
 
       setTitle(data.title);
       setContent(data.content);
@@ -67,6 +83,7 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
         description: "Your content has been successfully enhanced by AI.",
       });
     } catch (error) {
+      console.error('AI rewrite error:', error);
       toast({
         title: "Rewriting Failed",
         description: error instanceof Error ? error.message : "There was an error rewriting your content.",
@@ -89,6 +106,8 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
     setIsPublishing(true);
     
     try {
+      console.log('Publishing blog with status:', status);
+
       const { data, error } = await supabase.functions.invoke('blog-operations', {
         body: {
           action: 'create',
@@ -100,8 +119,22 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
         }
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      console.log('Blog creation response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`API Error: ${error.message}`);
+      }
+      
+      if (data?.error) {
+        console.error('Blog operations error:', data.error);
+        throw new Error(data.error);
+      }
+
+      if (!data?.success || !data?.blog) {
+        console.error('Invalid response from blog operations:', data);
+        throw new Error('Invalid response from blog service');
+      }
 
       onBlogCreated(data.blog);
       
@@ -117,6 +150,7 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
         description: `Your blog has been ${status === 'published' ? 'published successfully' : 'saved as a draft'}.`,
       });
     } catch (error) {
+      console.error('Blog publish error:', error);
       toast({
         title: "Operation Failed",
         description: error instanceof Error ? error.message : "There was an error saving your blog.",

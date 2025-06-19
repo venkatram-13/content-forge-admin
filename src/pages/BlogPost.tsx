@@ -4,14 +4,15 @@ import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Blog {
   id: string;
   title: string;
   content: string;
   excerpt: string;
-  featuredImage: string;
-  publishedAt: string;
+  featured_image: string;
+  created_at: string;
   author: string;
   slug: string;
   status: 'published' | 'draft';
@@ -21,16 +22,43 @@ const BlogPost = () => {
   const { slug } = useParams();
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedBlogs = localStorage.getItem('blogs');
-    if (savedBlogs && slug) {
-      const allBlogs = JSON.parse(savedBlogs);
-      const foundBlog = allBlogs.find((b: Blog) => b.slug === slug && b.status === 'published');
-      setBlog(foundBlog || null);
-    }
-    setLoading(false);
+    fetchBlog();
   }, [slug]);
+
+  const fetchBlog = async () => {
+    if (!slug) {
+      setError('Blog slug not found');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('Fetching blog with slug:', slug);
+      
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .single();
+
+      if (error) {
+        console.error('Error fetching blog:', error);
+        setError('Blog not found');
+      } else {
+        console.log('Blog fetched successfully:', data);
+        setBlog(data);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setError('Failed to load blog');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -61,13 +89,13 @@ const BlogPost = () => {
     );
   }
 
-  if (!blog) {
+  if (error || !blog) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md mx-auto">
           <CardContent className="p-8 text-center">
             <h2 className="text-2xl font-bold mb-4">Blog Not Found</h2>
-            <p className="text-gray-600 mb-6">The blog post you're looking for doesn't exist.</p>
+            <p className="text-gray-600 mb-6">{error || "The blog post you're looking for doesn't exist."}</p>
             <Link to="/">
               <Button>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -103,7 +131,7 @@ const BlogPost = () => {
         {/* Featured Image */}
         <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
           <img
-            src={blog.featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop"}
+            src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop"}
             alt={blog.title}
             className="w-full h-64 md:h-96 object-cover"
           />
@@ -122,7 +150,7 @@ const BlogPost = () => {
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              <span>{formatDate(blog.publishedAt)}</span>
+              <span>{formatDate(blog.created_at)}</span>
             </div>
           </div>
         </header>
@@ -139,7 +167,7 @@ const BlogPost = () => {
         <footer className="mt-12 pt-8 border-t">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              Published on {formatDate(blog.publishedAt)}
+              Published on {formatDate(blog.created_at)}
             </div>
             <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
               <Share2 className="w-4 h-4" />
