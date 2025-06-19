@@ -1,11 +1,24 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Simple hash function for demo purposes - in production, use proper bcrypt
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + 'salt_string');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  const hashedInput = await hashPassword(password);
+  return hashedInput === hash;
 }
 
 serve(async (req) => {
@@ -22,6 +35,8 @@ serve(async (req) => {
 
     const { action, email, password } = await req.json()
 
+    console.log('Admin auth request:', { action, email });
+
     if (action === 'login') {
       // Get admin user by email
       const { data: adminUser, error } = await supabase
@@ -31,6 +46,7 @@ serve(async (req) => {
         .single()
 
       if (error || !adminUser) {
+        console.log('Admin user not found:', error);
         return new Response(
           JSON.stringify({ error: 'Invalid credentials' }),
           { 
@@ -41,9 +57,10 @@ serve(async (req) => {
       }
 
       // Verify password
-      const isValid = await bcrypt.compare(password, adminUser.password_hash)
+      const isValid = await verifyPassword(password, adminUser.password_hash)
 
       if (!isValid) {
+        console.log('Invalid password for user:', email);
         return new Response(
           JSON.stringify({ error: 'Invalid credentials' }),
           { 
@@ -59,6 +76,8 @@ serve(async (req) => {
         email: adminUser.email, 
         exp: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
       }))
+
+      console.log('Login successful for:', email);
 
       return new Response(
         JSON.stringify({ 
@@ -78,6 +97,7 @@ serve(async (req) => {
         .single()
 
       if (existingAdmin) {
+        console.log('Admin already exists:', email);
         return new Response(
           JSON.stringify({ error: 'Admin user already exists' }),
           { 
@@ -88,7 +108,9 @@ serve(async (req) => {
       }
 
       // Hash password
-      const passwordHash = await bcrypt.hash(password)
+      const passwordHash = await hashPassword(password)
+
+      console.log('Creating admin user:', email);
 
       // Create admin user
       const { data, error } = await supabase
@@ -100,14 +122,17 @@ serve(async (req) => {
         .single()
 
       if (error) {
+        console.error('Failed to create admin user:', error);
         return new Response(
-          JSON.stringify({ error: 'Failed to create admin user' }),
+          JSON.stringify({ error: 'Failed to create admin user: ' + error.message }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500 
           }
         )
       }
+
+      console.log('Admin user created successfully:', email);
 
       return new Response(
         JSON.stringify({ 
@@ -130,7 +155,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Admin auth error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error: ' + error.message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
