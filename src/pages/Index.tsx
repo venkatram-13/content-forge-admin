@@ -38,7 +38,12 @@ const Index = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBlogs(data || []);
+      // Cast the data to ensure proper typing
+      const typedBlogs: Blog[] = (data || []).map(blog => ({
+        ...blog,
+        status: blog.status as 'published' | 'draft'
+      }));
+      setBlogs(typedBlogs);
     } catch (error) {
       console.error('Error fetching blogs:', error);
     } finally {

@@ -137,7 +137,7 @@ export const AdminDashboard = () => {
         {/* Content */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            <div className="gri d grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-white/90 text-sm font-medium flex items-center gap-2">

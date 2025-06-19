@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Upload, Save, AlertCircle, Link2, FileText, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Wand2, Upload, Save, AlertCircle, Link2, FileText, Sparkles, Image as ImageIcon, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 

@@ -12,8 +12,8 @@ interface Blog {
   title: string;
   content: string;
   excerpt: string;
-  featuredImage: string;
-  publishedAt: string;
+  featured_image: string;
+  created_at: string;
   author: string;
   slug: string;
   status: 'published' | 'draft';
@@ -88,7 +88,7 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
               <div key={blog.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex-shrink-0">
                   <img
-                    src={blog.featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=100&h=60&fit=crop"}
+                    src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=100&h=60&fit=crop"}
                     alt={blog.title}
                     className="w-16 h-10 object-cover rounded"
                   />
@@ -105,7 +105,7 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {formatDate(blog.publishedAt)}
+                      {formatDate(blog.created_at)}
                     </div>
                   </div>
                 </div>
