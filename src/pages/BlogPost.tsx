@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react';
@@ -50,7 +49,12 @@ const BlogPost = () => {
         setError('Blog not found');
       } else {
         console.log('Blog fetched successfully:', data);
-        setBlog(data);
+        // Cast the status to the correct type
+        const blogData: Blog = {
+          ...data,
+          status: data.status as 'published' | 'draft'
+        };
+        setBlog(blogData);
       }
     } catch (err) {
       console.error('Unexpected error:', err);

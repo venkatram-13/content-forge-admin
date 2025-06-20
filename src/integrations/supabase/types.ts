@@ -42,6 +42,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          views: number
         }
         Insert: {
           author?: string
@@ -54,6 +55,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          views?: number
         }
         Update: {
           author?: string
@@ -66,6 +68,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          views?: number
         }
         Relationships: []
       }
