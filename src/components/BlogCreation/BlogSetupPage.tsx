@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye, Plus, Type, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye, Plus, Type, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -38,6 +38,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
   const [showPreview, setShowPreview] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,11 +68,10 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     setUploadingImage(true);
     
     try {
-      // Create a data URL for immediate preview
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string;
-        insertImageIntoContent(imageUrl, file.name);
+        insertAtCursor(`\n\n![${file.name}](${imageUrl})\n\n`);
       };
       reader.readAsDataURL(file);
       
@@ -94,76 +94,99 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     }
   };
 
-  const insertImageIntoContent = (imageUrl: string, altText: string) => {
-    const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+  const insertAtCursor = (textToInsert: string) => {
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
-    const imageMarkdown = `\n\n![${altText}](${imageUrl})\n\n`;
+    const end = textarea.selectionEnd;
+    const newContent = content.substring(0, start) + textToInsert + content.substring(end);
     
-    const newContent = content.substring(0, start) + imageMarkdown + content.substring(start);
     setContent(newContent);
+    
+    // Set cursor position after inserted text
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + textToInsert.length;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 100);
+  };
+
+  const wrapSelectedText = (prefix: string, suffix: string = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    const wrappedText = prefix + (selectedText || 'text') + (suffix || prefix);
+    
+    const newContent = content.substring(0, start) + wrappedText + content.substring(end);
+    setContent(newContent);
+    
+    setTimeout(() => {
+      textarea.focus();
+      if (selectedText) {
+        textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
+      } else {
+        textarea.setSelectionRange(start + prefix.length, start + prefix.length + 4); // Select "text"
+      }
+    }, 100);
   };
 
   const insertFormatting = (format: string) => {
-    const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+    const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
     
-    let formattedText = '';
+    let textToInsert = '';
     
     switch (format) {
       case 'bold':
-        formattedText = `**${selectedText || 'bold text'}**`;
-        break;
+        wrapSelectedText('**', '**');
+        return;
       case 'italic':
-        formattedText = `*${selectedText || 'italic text'}*`;
-        break;
+        wrapSelectedText('*', '*');
+        return;
       case 'underline':
-        formattedText = `<u>${selectedText || 'underlined text'}</u>`;
-        break;
+        wrapSelectedText('<u>', '</u>');
+        return;
       case 'h1':
-        formattedText = `# ${selectedText || 'Heading 1'}`;
+        textToInsert = `\n# ${selectedText || 'Heading 1'}\n`;
         break;
       case 'h2':
-        formattedText = `## ${selectedText || 'Heading 2'}`;
+        textToInsert = `\n## ${selectedText || 'Heading 2'}\n`;
         break;
       case 'h3':
-        formattedText = `### ${selectedText || 'Heading 3'}`;
+        textToInsert = `\n### ${selectedText || 'Heading 3'}\n`;
         break;
       case 'h4':
-        formattedText = `#### ${selectedText || 'Heading 4'}`;
+        textToInsert = `\n#### ${selectedText || 'Heading 4'}\n`;
         break;
       case 'bullet-list':
-        formattedText = `- ${selectedText || 'List item'}`;
+        textToInsert = `\n- ${selectedText || 'List item'}\n- \n- \n`;
         break;
       case 'numbered-list':
-        formattedText = `1. ${selectedText || 'Numbered list item'}`;
+        textToInsert = `\n1. ${selectedText || 'First item'}\n2. \n3. \n`;
         break;
       case 'link':
-        formattedText = `[${selectedText || 'link text'}](https://example.com)`;
+        const linkText = selectedText || 'link text';
+        const url = prompt('Enter the URL:') || 'https://example.com';
+        textToInsert = `[${linkText}](${url})`;
         break;
       case 'cta-button':
         const buttonText = selectedText || 'Apply Now';
         const buttonUrl = prompt('Enter the URL for this button:') || 'https://example.com';
-        formattedText = `\n\n<div style="text-align: center; margin: 24px 0;"><button onclick="window.open('${buttonUrl}', '_blank')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; text-decoration: none; display: inline-block;">${buttonText}</button></div>\n\n`;
-        break;
-      case 'image-placeholder':
-        formattedText = `![${selectedText || 'Image description'}](https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop)`;
+        textToInsert = `\n\n<div style="text-align: center; margin: 24px 0;"><a href="${buttonUrl}" target="_blank" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; text-decoration: none; display: inline-block; hover:transform: translateY(-2px);">${buttonText}</a></div>\n\n`;
         break;
     }
     
-    const newContent = content.substring(0, start) + formattedText + content.substring(end);
-    setContent(newContent);
-    
-    // Focus back to textarea and set cursor position
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
-    }, 100);
+    if (textToInsert) {
+      insertAtCursor(textToInsert);
+    }
   };
 
   const validateContent = () => {
@@ -276,9 +299,19 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               )}
               <h1 className="text-3xl font-bold">{title}</h1>
               <p className="text-gray-600">By {author} • {wordCount} words</p>
-              <div className="prose prose-lg max-w-none">
-                <div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }} />
-              </div>
+              <div 
+                className="prose prose-lg max-w-none"
+                dangerouslySetInnerHTML={{ 
+                  __html: content
+                    .replace(/\n/g, '<br />')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                    .replace(/^#### (.*$)/gm, '<h4>$1</h4>')
+                }}
+              />
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
@@ -287,7 +320,8 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 variant="outline"
                 className="flex items-center gap-2"
               >
-                ← Back to Edit
+                <ArrowLeft className="w-4 h-4" />
+                Back to Edit
               </Button>
               
               <Button 
@@ -372,6 +406,11 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 placeholder="https://example.com/featured-image.jpg"
                 className="mt-2 h-10 md:h-12"
               />
+              {featuredImage && (
+                <div className="mt-2">
+                  <img src={featuredImage} alt="Featured" className="w-full h-32 object-cover rounded border" />
+                </div>
+              )}
             </div>
 
             <div>
@@ -386,6 +425,11 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 placeholder="https://example.com/thumbnail.jpg (optional)"
                 className="mt-2 h-10 md:h-12"
               />
+              {thumbnailImage && (
+                <div className="mt-2">
+                  <img src={thumbnailImage} alt="Thumbnail" className="w-full h-32 object-cover rounded border" />
+                </div>
+              )}
             </div>
           </div>
 
@@ -393,7 +437,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           <div>
             <Label htmlFor="content" className="text-sm md:text-base font-medium">
               Rich Text Editor ({wordCount} words - Min: 1500) 
-              <span className={wordCount < 1500 ? "text-red-500" : "text-green-500 ml-2"}>
+              <span className={wordCount < 1500 ? "text-red-500 ml-2" : "text-green-500 ml-2"}>
                 {wordCount < 1500 ? `Need ${1500 - wordCount} more words` : "✓ Word count met"}
               </span>
             </Label>
@@ -402,46 +446,82 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             <div className="flex flex-wrap gap-2 mt-2 mb-2 p-3 bg-gray-50 rounded-lg border">
               {/* Text Formatting */}
               <div className="flex gap-1 pr-2 border-r border-gray-300">
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('bold')} title="Bold">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('bold')} 
+                  title="Bold"
+                  type="button"
+                >
                   <Bold className="w-3 h-3" />
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('italic')} title="Italic">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('italic')} 
+                  title="Italic"
+                  type="button"
+                >
                   <Italic className="w-3 h-3" />
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('underline')} title="Underline">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('underline')} 
+                  title="Underline"
+                  type="button"
+                >
                   <Type className="w-3 h-3" />
                 </Button>
               </div>
 
               {/* Headings */}
               <div className="flex gap-1 pr-2 border-r border-gray-300">
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h1')} title="Heading 1">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h1')} title="Heading 1" type="button">
                   H1
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h2')} title="Heading 2">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h2')} title="Heading 2" type="button">
                   H2
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h3')} title="Heading 3">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h3')} title="Heading 3" type="button">
                   H3
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h4')} title="Heading 4">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h4')} title="Heading 4" type="button">
                   H4
                 </Button>
               </div>
 
               {/* Lists */}
               <div className="flex gap-1 pr-2 border-r border-gray-300">
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('bullet-list')} title="Bullet List">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('bullet-list')} 
+                  title="Bullet List"
+                  type="button"
+                >
                   <List className="w-3 h-3" />
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('numbered-list')} title="Numbered List">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('numbered-list')} 
+                  title="Numbered List"
+                  type="button"
+                >
                   1.
                 </Button>
               </div>
 
               {/* Links & Media */}
               <div className="flex gap-1 pr-2 border-r border-gray-300">
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('link')} title="Insert Link">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('link')} 
+                  title="Insert Link"
+                  type="button"
+                >
                   <Link className="w-3 h-3" />
                 </Button>
                 <Button 
@@ -450,6 +530,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   onClick={() => fileInputRef.current?.click()} 
                   disabled={uploadingImage}
                   title="Upload Image"
+                  type="button"
                 >
                   {uploadingImage ? (
                     <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -474,6 +555,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   onClick={() => insertFormatting('cta-button')} 
                   className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
                   title="Insert CTA Button"
+                  type="button"
                 >
                   <Plus className="w-3 h-3 mr-1" />
                   CTA Button
@@ -482,16 +564,18 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             </div>
             
             <Textarea
+              ref={textareaRef}
               id="content-editor"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Edit your blog content here..."
+              placeholder="Edit your blog content here... Use the toolbar above to format your text, add images, and insert CTA buttons!"
               rows={24}
-              className="mt-2 font-mono text-sm"
+              className="mt-2 font-mono text-sm resize-none"
             />
             <p className="text-xs text-gray-500 mt-2">
-              💡 <strong>Pro Tips:</strong> Upload images directly using the 📷 button, create CTA buttons with custom URLs, 
-              and use all formatting options to create engaging content. Minimum 1500 words required for publication.
+              💡 <strong>Pro Tips:</strong> Select text before applying formatting (bold, italic, etc.). 
+              Upload images directly using the 📷 button. Create CTA buttons with custom URLs. 
+              Minimum 1500 words required for publication.
             </p>
           </div>
 
@@ -500,14 +584,17 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               onClick={onBack}
               variant="outline"
               className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6"
+              type="button"
             >
-              ← Back to Content
+              <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
+              Back to Content
             </Button>
             
             <Button 
               onClick={() => setShowPreview(true)}
               variant="outline"
               className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6"
+              type="button"
             >
               <Eye className="w-3 h-3 md:w-4 md:h-4" />
               Preview
@@ -518,6 +605,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               variant="outline"
               disabled={isPublishing}
               className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 border-2"
+              type="button"
             >
               <Save className="w-3 h-3 md:w-4 md:h-4" />
               Save as Draft
@@ -527,6 +615,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               onClick={() => publishBlog('published')}
               disabled={isPublishing}
               className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700"
+              type="button"
             >
               {isPublishing ? (
                 <>
