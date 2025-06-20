@@ -80,10 +80,31 @@ const Index = () => {
   const handleBlogClick = async (blogId: string) => {
     // Increment view count
     try {
-      await supabase
+      // First get the current view count
+      const { data: currentBlog, error: fetchError } = await supabase
         .from('blogs')
-        .update({ views: supabase.sql`views + 1` })
+        .select('views')
+        .eq('id', blogId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Then update with incremented value
+      const { error: updateError } = await supabase
+        .from('blogs')
+        .update({ views: (currentBlog.views || 0) + 1 })
         .eq('id', blogId);
+
+      if (updateError) throw updateError;
+
+      // Update local state to reflect the change
+      setBlogs(prevBlogs => 
+        prevBlogs.map(blog => 
+          blog.id === blogId 
+            ? { ...blog, views: (blog.views || 0) + 1 }
+            : blog
+        )
+      );
     } catch (error) {
       console.error('Error updating view count:', error);
     }
