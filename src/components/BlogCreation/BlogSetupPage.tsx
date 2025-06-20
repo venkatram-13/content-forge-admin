@@ -1,11 +1,11 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye } from 'lucide-react';
+import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye, Plus, Type, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,7 +36,74 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
   const [author, setAuthor] = useState('Admin');
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+    
+    try {
+      // Create a data URL for immediate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        insertImageIntoContent(imageUrl, file.name);
+      };
+      reader.readAsDataURL(file);
+      
+      toast({
+        title: "Image Added",
+        description: "Image has been inserted into your content.",
+      });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "There was an error uploading your image.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const insertImageIntoContent = (imageUrl: string, altText: string) => {
+    const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const imageMarkdown = `\n\n![${altText}](${imageUrl})\n\n`;
+    
+    const newContent = content.substring(0, start) + imageMarkdown + content.substring(start);
+    setContent(newContent);
+  };
 
   const insertFormatting = (format: string) => {
     const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
@@ -55,6 +122,9 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
       case 'italic':
         formattedText = `*${selectedText || 'italic text'}*`;
         break;
+      case 'underline':
+        formattedText = `<u>${selectedText || 'underlined text'}</u>`;
+        break;
       case 'h1':
         formattedText = `# ${selectedText || 'Heading 1'}`;
         break;
@@ -64,26 +134,40 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
       case 'h3':
         formattedText = `### ${selectedText || 'Heading 3'}`;
         break;
-      case 'list':
+      case 'h4':
+        formattedText = `#### ${selectedText || 'Heading 4'}`;
+        break;
+      case 'bullet-list':
         formattedText = `- ${selectedText || 'List item'}`;
+        break;
+      case 'numbered-list':
+        formattedText = `1. ${selectedText || 'Numbered list item'}`;
         break;
       case 'link':
         formattedText = `[${selectedText || 'link text'}](https://example.com)`;
         break;
-      case 'button':
-        formattedText = `<button onclick="window.open('https://example.com', '_blank')" style="background: linear-gradient(to right, #3b82f6, #1d4ed8); color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 8px 0;">${selectedText || 'Apply Now'}</button>`;
+      case 'cta-button':
+        const buttonText = selectedText || 'Apply Now';
+        const buttonUrl = prompt('Enter the URL for this button:') || 'https://example.com';
+        formattedText = `\n\n<div style="text-align: center; margin: 24px 0;"><button onclick="window.open('${buttonUrl}', '_blank')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; text-decoration: none; display: inline-block;">${buttonText}</button></div>\n\n`;
         break;
-      case 'image':
+      case 'image-placeholder':
         formattedText = `![${selectedText || 'Image description'}](https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop)`;
         break;
     }
     
     const newContent = content.substring(0, start) + formattedText + content.substring(end);
     setContent(newContent);
+    
+    // Focus back to textarea and set cursor position
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
+    }, 100);
   };
 
   const validateContent = () => {
-    const wordCount = content.split(/\s+/).length;
+    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
     
     if (!title.trim()) {
       toast({
@@ -94,10 +178,10 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
       return false;
     }
     
-    if (wordCount < 1000) {
+    if (wordCount < 1500) {
       toast({
         title: "Content Too Short",
-        description: `Your content has ${wordCount} words. Minimum 1000 words required.`,
+        description: `Your content has ${wordCount} words. Minimum 1500 words required.`,
         variant: "destructive",
       });
       return false;
@@ -171,7 +255,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     setIsPublishing(false);
   };
 
-  const wordCount = content.split(/\s+/).length;
+  const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
 
   if (showPreview) {
     return (
@@ -308,38 +392,93 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           {/* Rich Text Editor */}
           <div>
             <Label htmlFor="content" className="text-sm md:text-base font-medium">
-              Rich Text Editor ({wordCount} words - Min: 1000)
+              Rich Text Editor ({wordCount} words - Min: 1500) 
+              <span className={wordCount < 1500 ? "text-red-500" : "text-green-500 ml-2"}>
+                {wordCount < 1500 ? `Need ${1500 - wordCount} more words` : "✓ Word count met"}
+              </span>
             </Label>
             
-            {/* Formatting Toolbar */}
-            <div className="flex flex-wrap gap-2 mt-2 mb-2 p-2 bg-gray-50 rounded-lg">
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('bold')}>
-                <Bold className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('italic')}>
-                <Italic className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('h1')}>
-                H1
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('h2')}>
-                H2
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('h3')}>
-                H3
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('list')}>
-                <List className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('link')}>
-                <Link className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('image')}>
-                <ImageIcon className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => insertFormatting('button')} className="bg-blue-100">
-                + Button
-              </Button>
+            {/* Enhanced Formatting Toolbar */}
+            <div className="flex flex-wrap gap-2 mt-2 mb-2 p-3 bg-gray-50 rounded-lg border">
+              {/* Text Formatting */}
+              <div className="flex gap-1 pr-2 border-r border-gray-300">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('bold')} title="Bold">
+                  <Bold className="w-3 h-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('italic')} title="Italic">
+                  <Italic className="w-3 h-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('underline')} title="Underline">
+                  <Type className="w-3 h-3" />
+                </Button>
+              </div>
+
+              {/* Headings */}
+              <div className="flex gap-1 pr-2 border-r border-gray-300">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h1')} title="Heading 1">
+                  H1
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h2')} title="Heading 2">
+                  H2
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h3')} title="Heading 3">
+                  H3
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h4')} title="Heading 4">
+                  H4
+                </Button>
+              </div>
+
+              {/* Lists */}
+              <div className="flex gap-1 pr-2 border-r border-gray-300">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('bullet-list')} title="Bullet List">
+                  <List className="w-3 h-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('numbered-list')} title="Numbered List">
+                  1.
+                </Button>
+              </div>
+
+              {/* Links & Media */}
+              <div className="flex gap-1 pr-2 border-r border-gray-300">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('link')} title="Insert Link">
+                  <Link className="w-3 h-3" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={uploadingImage}
+                  title="Upload Image"
+                >
+                  {uploadingImage ? (
+                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ImageIcon className="w-3 h-3" />
+                  )}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
+
+              {/* CTA Button */}
+              <div className="flex gap-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('cta-button')} 
+                  className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
+                  title="Insert CTA Button"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  CTA Button
+                </Button>
+              </div>
             </div>
             
             <Textarea
@@ -347,11 +486,12 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Edit your blog content here..."
-              rows={20}
-              className="mt-2"
+              rows={24}
+              className="mt-2 font-mono text-sm"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Use the toolbar above to format text, add images, links, and CTA buttons.
+            <p className="text-xs text-gray-500 mt-2">
+              💡 <strong>Pro Tips:</strong> Upload images directly using the 📷 button, create CTA buttons with custom URLs, 
+              and use all formatting options to create engaging content. Minimum 1500 words required for publication.
             </p>
           </div>
 
