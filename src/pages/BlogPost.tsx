@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react';
@@ -16,6 +17,16 @@ interface Blog {
   slug: string;
   status: 'published' | 'draft';
 }
+
+const AdPlaceholder = ({ id, className = "", label }: { id: string; className?: string; label: string }) => (
+  <div 
+    id={id} 
+    className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 text-sm font-medium ${className}`}
+  >
+    {/* AdSense Placeholder - {label} */}
+    <span className="opacity-50">Ad Space - {label}</span>
+  </div>
+);
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -49,7 +60,6 @@ const BlogPost = () => {
         setError('Blog not found');
       } else {
         console.log('Blog fetched successfully:', data);
-        // Cast the status to the correct type
         const blogData: Blog = {
           ...data,
           status: data.status as 'published' | 'draft'
@@ -116,11 +126,11 @@ const BlogPost = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              Back to Blog
+              Back to TalentSpur
             </Link>
             <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
               <Share2 className="w-4 h-4" />
@@ -130,56 +140,119 @@ const BlogPost = () => {
         </div>
       </header>
 
-      {/* Article */}
-      <article className="max-w-4xl mx-auto px-4 py-8">
-        {/* Featured Image */}
-        <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
-          <img
-            src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop"}
-            alt={blog.title}
-            className="w-full h-64 md:h-96 object-cover"
-          />
+      {/* Main Content Container */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Article Column */}
+          <article className="lg:col-span-8">
+            {/* Top Ad Placeholder - Desktop & Mobile */}
+            <AdPlaceholder 
+              id="ads-top" 
+              className="h-24 mb-8" 
+              label="Top Banner"
+            />
+
+            {/* Featured Image */}
+            <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
+              <img
+                src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop"}
+                alt={blog.title}
+                className="w-full h-64 md:h-96 object-cover"
+              />
+            </div>
+
+            {/* Article Header */}
+            <header className="mb-8">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                {blog.title}
+              </h1>
+              
+              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-600">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="font-medium text-sm md:text-base">{blog.author}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-sm md:text-base">{formatDate(blog.created_at)}</span>
+                </div>
+              </div>
+            </header>
+
+            {/* Article Content with In-Content Ad Placements */}
+            <div className="prose prose-sm md:prose-lg max-w-none">
+              {blog.content.split('\n\n').map((paragraph, index) => (
+                <div key={index}>
+                  <div 
+                    className="text-gray-800 leading-relaxed mb-6"
+                    dangerouslySetInnerHTML={{ __html: paragraph.replace(/\n/g, '<br />') }}
+                  />
+                  {/* In-Content Ad after 2nd paragraph */}
+                  {index === 1 && (
+                    <AdPlaceholder 
+                      id="ads-middle" 
+                      className="h-20 md:h-24 my-8" 
+                      label="In-Content Banner"
+                    />
+                  )}
+                  {/* Additional in-content ads for longer articles */}
+                  {index > 0 && index % 4 === 0 && (
+                    <AdPlaceholder 
+                      id={`ads-content-${index}`} 
+                      className="h-16 md:h-20 my-6" 
+                      label="Content Break"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Ad Placeholder */}
+            <AdPlaceholder 
+              id="ads-bottom" 
+              className="h-24 mt-8 mb-8" 
+              label="Bottom Banner"
+            />
+
+            {/* Article Footer */}
+            <footer className="mt-12 pt-8 border-t">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-500">
+                  Published on {formatDate(blog.created_at)}
+                </div>
+                <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
+                  <Share2 className="w-4 h-4" />
+                  Share Article
+                </Button>
+              </div>
+            </footer>
+          </article>
+
+          {/* Sidebar - Desktop Only */}
+          <aside className="hidden lg:block lg:col-span-4">
+            <div className="sticky top-8 space-y-6">
+              {/* Sidebar Ad Placeholders */}
+              <AdPlaceholder 
+                id="ads-sidebar-top" 
+                className="h-64" 
+                label="Sidebar Rectangle"
+              />
+              
+              <AdPlaceholder 
+                id="ads-sidebar-middle" 
+                className="h-48" 
+                label="Sidebar Square"
+              />
+              
+              <AdPlaceholder 
+                id="ads-sidebar-bottom" 
+                className="h-96" 
+                label="Sidebar Skyscraper"
+              />
+            </div>
+          </aside>
         </div>
-
-        {/* Article Header */}
-        <header className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            {blog.title}
-          </h1>
-          
-          <div className="flex items-center gap-6 text-gray-600">
-            <div className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              <span className="font-medium">{blog.author}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              <span>{formatDate(blog.created_at)}</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Article Content */}
-        <div className="prose prose-lg max-w-none">
-          <div 
-            className="text-gray-800 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: blog.content.replace(/\n/g, '<br />') }}
-          />
-        </div>
-
-        {/* Article Footer */}
-        <footer className="mt-12 pt-8 border-t">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Published on {formatDate(blog.created_at)}
-            </div>
-            <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
-              <Share2 className="w-4 h-4" />
-              Share Article
-            </Button>
-          </div>
-        </footer>
-      </article>
+      </div>
     </div>
   );
 };
