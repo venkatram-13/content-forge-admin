@@ -79,7 +79,8 @@ const BlogPost = () => {
         console.log('Blog fetched successfully:', data);
         const blogData: Blog = {
           ...data,
-          status: data.status as 'published' | 'draft'
+          status: data.status as 'published' | 'draft',
+          application_link: data['Apply link'] // Map the database column to our interface
         };
         setBlog(blogData);
       }
@@ -214,7 +215,7 @@ const BlogPost = () => {
               />
             </div>
 
-            {/* NEW: Apply Here Button */}
+            {/* Apply Here Button */}
             {blog.application_link && (
               <div className="mt-12 mb-8 text-center">
                 <a
@@ -275,7 +276,7 @@ const BlogPost = () => {
           </aside>
         </div>
 
-        {/* NEW: Recent Blogs Section */}
+        {/* Recent Blogs Section */}
         <div className="mt-16 pt-12 border-t border-gray-200">
           <RecentBlogs currentBlogId={blog.id} />
         </div>

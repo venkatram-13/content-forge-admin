@@ -1,11 +1,15 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Edit, Trash2, Eye, BarChart3, ExternalLink } from 'lucide-react';
+import { BlogAnalytics } from './BlogAnalytics';
+import { CreateBlog } from './CreateBlog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Blog {
   id: string;
@@ -17,6 +21,7 @@ interface Blog {
   author: string;
   slug: string;
   status: 'published' | 'draft';
+  views: number;
 }
 
 interface BlogManagerProps {
@@ -25,8 +30,79 @@ interface BlogManagerProps {
 }
 
 export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
-  const [selectedBlogs, setSelectedBlogs] = useState<string[]>([]);
-  const { toast } = useToast();
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleDelete = async (blogId: string) => {
+    setLoading(blogId);
+    try {
+      const { data, error } = await supabase.functions.invoke('blog-operations', {
+        body: { action: 'delete', blogId }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        const updatedBlogs = blogs.filter(blog => blog.id !== blogId);
+        onBlogsUpdated(updatedBlogs);
+        toast.success('Blog deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      toast.error('Failed to delete blog');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleStatusChange = async (blogId: string, newStatus: 'published' | 'draft') => {
+    setLoading(blogId);
+    try {
+      const { data, error } = await supabase.functions.invoke('blog-operations', {
+        body: { 
+          action: 'update', 
+          blogId,
+          updates: { status: newStatus }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        const updatedBlogs = blogs.map(blog => 
+          blog.id === blogId ? { ...blog, status: newStatus } : blog
+        );
+        onBlogsUpdated(updatedBlogs);
+        toast.success(`Blog ${newStatus === 'published' ? 'published' : 'unpublished'} successfully!`);
+      }
+    } catch (error) {
+      console.error('Error updating blog status:', error);
+      toast.error('Failed to update blog status');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleEditComplete = (updatedBlog: Blog) => {
+    const updatedBlogs = blogs.map(blog => 
+      blog.id === updatedBlog.id ? updatedBlog : blog
+    );
+    onBlogsUpdated(updatedBlogs);
+    setEditOpen(false);
+    setSelectedBlog(null);
+  };
+
+  const openAnalytics = (blog: Blog) => {
+    setSelectedBlog(blog);
+    setAnalyticsOpen(true);
+  };
+
+  const openEdit = (blog: Blog) => {
+    setSelectedBlog(blog);
+    setEditOpen(true);
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -36,41 +112,15 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
     });
   };
 
-  const deleteBlog = (blogId: string) => {
-    const updatedBlogs = blogs.filter(blog => blog.id !== blogId);
-    onBlogsUpdated(updatedBlogs);
-    toast({
-      title: "Blog Deleted",
-      description: "The blog post has been successfully deleted.",
-    });
-  };
-
-  const toggleStatus = (blogId: string) => {
-    const updatedBlogs = blogs.map(blog => 
-      blog.id === blogId 
-        ? { ...blog, status: blog.status === 'published' ? 'draft' as const : 'published' as const }
-        : blog
-    );
-    onBlogsUpdated(updatedBlogs);
-    
-    const blog = blogs.find(b => b.id === blogId);
-    const newStatus = blog?.status === 'published' ? 'draft' : 'published';
-    
-    toast({
-      title: `Blog ${newStatus === 'published' ? 'Published' : 'Unpublished'}`,
-      description: `The blog post is now ${newStatus}.`,
-    });
-  };
-
   if (blogs.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Edit className="w-8 h-8 text-gray-400" />
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+        <CardContent className="p-12 text-center">
+          <div className="text-gray-500 mb-4">
+            <Edit className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-semibold mb-2">No blogs created yet</h3>
+            <p>Create your first blog to get started!</p>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No blogs yet</h3>
-          <p className="text-gray-600 mb-4">Create your first blog post to get started.</p>
         </CardContent>
       </Card>
     );
@@ -78,75 +128,156 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Blog Posts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {blogs.map((blog) => (
-              <div key={blog.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex-shrink-0">
-                  <img
-                    src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=100&h=60&fit=crop"}
-                    alt={blog.title}
-                    className="w-16 h-10 object-cover rounded"
-                  />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate mb-1">
-                    {blog.title}
-                  </h3>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {blog.author}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(blog.created_at)}
-                    </div>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Manage Blogs</h2>
+        <div className="text-sm text-gray-500">
+          {blogs.length} blog{blogs.length !== 1 ? 's' : ''} total
+        </div>
+      </div>
+
+      <div className="grid gap-6">
+        {blogs.map((blog) => (
+          <Card key={blog.id} className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CardTitle className="text-lg">{blog.title}</CardTitle>
+                    <Badge variant={blog.status === 'published' ? 'default' : 'secondary'}>
+                      {blog.status}
+                    </Badge>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{blog.excerpt}</p>
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span>By {blog.author}</span>
+                    <span>{formatDate(blog.created_at)}</span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      {blog.views} views
+                    </span>
                   </div>
                 </div>
+                {blog.featured_image && (
+                  <img
+                    src={blog.featured_image}
+                    alt={blog.title}
+                    className="w-20 h-20 object-cover rounded-lg ml-4"
+                  />
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openAnalytics(blog)}
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </Button>
                 
-                <div className="flex items-center gap-2">
-                  <Badge variant={blog.status === 'published' ? 'default' : 'secondary'}>
-                    {blog.status}
-                  </Badge>
-                  
-                  <div className="flex items-center gap-1">
-                    {blog.status === 'published' && (
-                      <Link to={`/blog/${blog.slug}`} target="_blank">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    )}
-                    
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openEdit(blog)}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </Button>
+                
+                {blog.status === 'published' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="flex items-center gap-2"
+                  >
+                    <a href={`/blog/${blog.slug}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4" />
+                      View
+                    </a>
+                  </Button>
+                )}
+                
+                <Button
+                  variant={blog.status === 'published' ? 'secondary' : 'default'}
+                  size="sm"
+                  onClick={() => handleStatusChange(blog.id, blog.status === 'published' ? 'draft' : 'published')}
+                  disabled={loading === blog.id}
+                >
+                  {blog.status === 'published' ? 'Unpublish' : 'Publish'}
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                     <Button
-                      variant="ghost"
+                      variant="destructive"
                       size="sm"
-                      onClick={() => toggleStatus(blog.id)}
-                    >
-                      {blog.status === 'published' ? 'Unpublish' : 'Publish'}
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteBlog(blog.id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="flex items-center gap-2"
+                      disabled={loading === blog.id}
                     >
                       <Trash2 className="w-4 h-4" />
+                      Delete
                     </Button>
-                  </div>
-                </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Blog</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{blog.title}"? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(blog.id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Analytics Modal */}
+      <Dialog open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Blog Analytics</DialogTitle>
+          </DialogHeader>
+          {selectedBlog && (
+            <BlogAnalytics
+              blogId={selectedBlog.id}
+              blogTitle={selectedBlog.title}
+              onClose={() => setAnalyticsOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Blog</DialogTitle>
+          </DialogHeader>
+          {selectedBlog && (
+            <CreateBlog
+              existingBlog={selectedBlog}
+              onBlogCreated={handleEditComplete}
+              isEditing={true}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

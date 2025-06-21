@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreateBlog } from './CreateBlog';
 import { AdminSettings } from './AdminSettings';
 import { BlogManager } from './BlogManager';
+import { BlogAnalytics } from './BlogAnalytics';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,12 +20,14 @@ interface Blog {
   author: string;
   slug: string;
   status: 'published' | 'draft';
+  views: number;
 }
 
 export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'create' | 'manage' | 'settings'>('overview');
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalViews, setTotalViews] = useState(0);
   const { logout, user } = useAdminAuth();
 
   useEffect(() => {
@@ -39,7 +42,12 @@ export const AdminDashboard = () => {
 
       if (error) throw error;
       if (data.success) {
-        setBlogs(data.blogs || []);
+        const blogsData = data.blogs || [];
+        setBlogs(blogsData);
+        
+        // Calculate total views
+        const total = blogsData.reduce((sum: number, blog: Blog) => sum + (blog.views || 0), 0);
+        setTotalViews(total);
       }
     } catch (error) {
       console.error('Error fetching blogs:', error);
@@ -55,6 +63,9 @@ export const AdminDashboard = () => {
 
   const handleBlogUpdated = (updatedBlogs: Blog[]) => {
     setBlogs(updatedBlogs);
+    // Recalculate total views
+    const total = updatedBlogs.reduce((sum, blog) => sum + (blog.views || 0), 0);
+    setTotalViews(total);
   };
 
   const publishedCount = blogs.filter(blog => blog.status === 'published').length;
@@ -177,15 +188,28 @@ export const AdminDashboard = () => {
               <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-white/90 text-sm font-medium flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    AI Powered
+                    <BarChart3 className="w-4 h-4" />
+                    Total Views
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">✨</div>
+                  <div className="text-3xl font-bold">{totalViews.toLocaleString()}</div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Analytics Section */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <BarChart3 className="w-5 h-5 text-purple-600" />
+                  Website Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BlogAnalytics />
+              </CardContent>
+            </Card>
 
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
               <CardHeader>
