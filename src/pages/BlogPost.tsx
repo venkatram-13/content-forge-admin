@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { TableOfContents, TOCItem } from '@/components/TableOfContents';
+import { RecentBlogs } from '@/components/RecentBlogs';
 import { supabase } from '@/integrations/supabase/client';
 import { generateTableOfContents, renderMarkdownWithTOC } from '@/utils/markdownRenderer';
 
@@ -214,7 +214,7 @@ const BlogPost = () => {
               />
             </div>
 
-            {/* Apply Here Button */}
+            {/* NEW: Apply Here Button */}
             {blog.application_link && (
               <div className="mt-12 mb-8 text-center">
                 <a
@@ -273,6 +273,11 @@ const BlogPost = () => {
               />
             </div>
           </aside>
+        </div>
+
+        {/* NEW: Recent Blogs Section */}
+        <div className="mt-16 pt-12 border-t border-gray-200">
+          <RecentBlogs currentBlogId={blog.id} />
         </div>
       </div>
 

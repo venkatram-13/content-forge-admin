@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,6 +19,7 @@ interface Blog {
   author: string;
   slug: string;
   status: 'published' | 'draft';
+  application_link?: string;
 }
 
 interface CreateBlogProps {
@@ -33,6 +33,7 @@ export const CreateBlog = ({ onBlogCreated }: CreateBlogProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
+  const [applicationLink, setApplicationLink] = useState('');
   const [author, setAuthor] = useState('Admin');
   const [isRewriting, setIsRewriting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -134,6 +135,7 @@ ${sourceContent}
           content: content.trim(),
           featuredImage: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
           author: author.trim(),
+          applicationLink: applicationLink.trim() || undefined,
           status
         }
       });
@@ -163,6 +165,7 @@ ${sourceContent}
       setTitle('');
       setContent('');
       setFeaturedImage('');
+      setApplicationLink('');
       
       toast({
         title: status === 'published' ? "Blog Published! 🎉" : "Draft Saved! 📝",
@@ -316,6 +319,23 @@ ${sourceContent}
               placeholder="https://example.com/image.jpg (optional)"
               className="mt-2 h-10 md:h-12"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="applicationLink" className="text-sm md:text-base font-medium flex items-center gap-2">
+              <Link2 className="w-3 h-3 md:w-4 md:h-4" />
+              Application Link (Optional)
+            </Label>
+            <Input
+              id="applicationLink"
+              value={applicationLink}
+              onChange={(e) => setApplicationLink(e.target.value)}
+              placeholder="https://example.com/apply (will show as 'Apply Here' button)"
+              className="mt-2 h-10 md:h-12"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              If provided, an "Apply Here" button will appear at the bottom of the blog post
+            </p>
           </div>
 
           <div>

@@ -32,6 +32,7 @@ export type Database = {
       }
       blogs: {
         Row: {
+          "Apply link": string | null
           author: string
           content: string
           created_at: string
@@ -45,6 +46,7 @@ export type Database = {
           views: number
         }
         Insert: {
+          "Apply link"?: string | null
           author?: string
           content: string
           created_at?: string
@@ -58,6 +60,7 @@ export type Database = {
           views?: number
         }
         Update: {
+          "Apply link"?: string | null
           author?: string
           content?: string
           created_at?: string
