@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
@@ -46,8 +47,11 @@ const BlogPost = () => {
     if (blog?.content) {
       const tocItems = generateTableOfContents(blog.content);
       setToc(tocItems);
-      const htmlContent = renderMarkdownWithTOC(blog.content);
-      setRenderedContent(htmlContent);
+      
+      // Handle async markdown rendering
+      renderMarkdownWithTOC(blog.content).then(htmlContent => {
+        setRenderedContent(htmlContent);
+      });
     }
   }, [blog?.content]);
 
@@ -272,8 +276,8 @@ const BlogPost = () => {
         </div>
       </div>
 
-      {/* Custom CSS for rendered markdown */}
-      <style jsx>{`
+      {/* CSS for markdown content */}
+      <style>{`
         .markdown-content h2 {
           font-size: 1.875rem;
           font-weight: 700;

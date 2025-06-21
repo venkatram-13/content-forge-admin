@@ -33,7 +33,7 @@ export const generateTableOfContents = (content: string): TOCItem[] => {
   return toc;
 };
 
-export const renderMarkdownWithTOC = (content: string): string => {
+export const renderMarkdownWithTOC = async (content: string): Promise<string> => {
   // Generate TOC first
   const toc = generateTableOfContents(content);
   
@@ -50,9 +50,11 @@ export const renderMarkdownWithTOC = (content: string): string => {
   });
 
   // Render markdown to HTML
-  return marked(processedContent);
+  const result = await marked(processedContent);
+  return typeof result === 'string' ? result : '';
 };
 
-export const renderMarkdown = (content: string): string => {
-  return marked(content);
+export const renderMarkdown = async (content: string): Promise<string> => {
+  const result = await marked(content);
+  return typeof result === 'string' ? result : '';
 };
