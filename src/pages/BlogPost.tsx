@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { TableOfContents, TOCItem } from '@/components/TableOfContents';
 import { supabase } from '@/integrations/supabase/client';
+import { generateTableOfContents, renderMarkdownWithTOC } from '@/utils/markdownRenderer';
 
 interface Blog {
   id: string;
@@ -16,6 +17,7 @@ interface Blog {
   author: string;
   slug: string;
   status: 'published' | 'draft';
+  application_link?: string;
 }
 
 const AdPlaceholder = ({ id, className = "", label }: { id: string; className?: string; label: string }) => (
@@ -33,10 +35,21 @@ const BlogPost = () => {
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toc, setToc] = useState<TOCItem[]>([]);
+  const [renderedContent, setRenderedContent] = useState('');
 
   useEffect(() => {
     fetchBlog();
   }, [slug]);
+
+  useEffect(() => {
+    if (blog?.content) {
+      const tocItems = generateTableOfContents(blog.content);
+      setToc(tocItems);
+      const htmlContent = renderMarkdownWithTOC(blog.content);
+      setRenderedContent(htmlContent);
+    }
+  }, [blog?.content]);
 
   const fetchBlog = async () => {
     if (!slug) {
@@ -179,33 +192,38 @@ const BlogPost = () => {
               </div>
             </header>
 
-            {/* Article Content with In-Content Ad Placements */}
+            {/* Table of Contents */}
+            <TableOfContents items={toc} />
+
+            {/* Article Content with Rendered Markdown */}
             <div className="prose prose-sm md:prose-lg max-w-none">
-              {blog.content.split('\n\n').map((paragraph, index) => (
-                <div key={index}>
-                  <div 
-                    className="text-gray-800 leading-relaxed mb-6"
-                    dangerouslySetInnerHTML={{ __html: paragraph.replace(/\n/g, '<br />') }}
-                  />
-                  {/* In-Content Ad after 2nd paragraph */}
-                  {index === 1 && (
-                    <AdPlaceholder 
-                      id="ads-middle" 
-                      className="h-20 md:h-24 my-8" 
-                      label="In-Content Banner"
-                    />
-                  )}
-                  {/* Additional in-content ads for longer articles */}
-                  {index > 0 && index % 4 === 0 && (
-                    <AdPlaceholder 
-                      id={`ads-content-${index}`} 
-                      className="h-16 md:h-20 my-6" 
-                      label="Content Break"
-                    />
-                  )}
-                </div>
-              ))}
+              {/* In-Content Ad after TOC */}
+              <AdPlaceholder 
+                id="ads-middle" 
+                className="h-20 md:h-24 mb-8" 
+                label="In-Content Banner"
+              />
+              
+              <div 
+                className="markdown-content"
+                dangerouslySetInnerHTML={{ __html: renderedContent }}
+              />
             </div>
+
+            {/* Apply Here Button */}
+            {blog.application_link && (
+              <div className="mt-12 mb-8 text-center">
+                <a
+                  href={blog.application_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                >
+                  Apply Here
+                  <ExternalLink className="w-5 h-5" />
+                </a>
+              </div>
+            )}
 
             {/* Bottom Ad Placeholder */}
             <AdPlaceholder 
@@ -253,6 +271,76 @@ const BlogPost = () => {
           </aside>
         </div>
       </div>
+
+      {/* Custom CSS for rendered markdown */}
+      <style jsx>{`
+        .markdown-content h2 {
+          font-size: 1.875rem;
+          font-weight: 700;
+          margin-top: 2rem;
+          margin-bottom: 1rem;
+          color: #1f2937;
+          border-bottom: 2px solid #e5e7eb;
+          padding-bottom: 0.5rem;
+        }
+        .markdown-content h3 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin-top: 1.5rem;
+          margin-bottom: 0.75rem;
+          color: #374151;
+        }
+        .markdown-content h4 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-top: 1.25rem;
+          margin-bottom: 0.5rem;
+          color: #4b5563;
+        }
+        .markdown-content ul, .markdown-content ol {
+          margin: 1rem 0;
+          padding-left: 1.5rem;
+        }
+        .markdown-content li {
+          margin: 0.5rem 0;
+        }
+        .markdown-content p {
+          margin: 1rem 0;
+          line-height: 1.7;
+        }
+        .markdown-content a {
+          color: #2563eb;
+          text-decoration: underline;
+        }
+        .markdown-content a:hover {
+          color: #1d4ed8;
+        }
+        .markdown-content strong {
+          font-weight: 700;
+        }
+        .markdown-content em {
+          font-style: italic;
+        }
+        .markdown-content code {
+          background-color: #f3f4f6;
+          padding: 0.125rem 0.25rem;
+          border-radius: 0.25rem;
+          font-family: ui-monospace, monospace;
+        }
+        .markdown-content pre {
+          background-color: #f3f4f6;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          overflow-x: auto;
+          margin: 1rem 0;
+        }
+        .markdown-content img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.5rem;
+          margin: 1rem 0;
+        }
+      `}</style>
     </div>
   );
 };

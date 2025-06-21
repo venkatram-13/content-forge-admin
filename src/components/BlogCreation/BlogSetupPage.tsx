@@ -26,6 +26,7 @@ interface Blog {
   author: string;
   slug: string;
   status: 'published' | 'draft';
+  application_link?: string;
 }
 
 export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onBack }: BlogSetupPageProps) => {
@@ -33,6 +34,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
   const [content, setContent] = useState(initialContent);
   const [featuredImage, setFeaturedImage] = useState('');
   const [thumbnailImage, setThumbnailImage] = useState('');
+  const [applicationLink, setApplicationLink] = useState('');
   const [author, setAuthor] = useState('Admin');
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -239,6 +241,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           content: content.trim(),
           featuredImage: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
           author: author.trim(),
+          applicationLink: applicationLink.trim() || undefined,
           status
         }
       });
@@ -431,6 +434,24 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Application Link Field */}
+          <div>
+            <Label htmlFor="applicationLink" className="text-sm md:text-base font-medium flex items-center gap-2">
+              <Link className="w-3 h-3 md:w-4 md:h-4" />
+              Application Link (Optional)
+            </Label>
+            <Input
+              id="applicationLink"
+              value={applicationLink}
+              onChange={(e) => setApplicationLink(e.target.value)}
+              placeholder="https://example.com/apply (will show as 'Apply Here' button on blog)"
+              className="mt-2 h-10 md:h-12"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              If provided, an "Apply Here" button will appear at the bottom of the blog post
+            </p>
           </div>
 
           {/* Rich Text Editor */}
