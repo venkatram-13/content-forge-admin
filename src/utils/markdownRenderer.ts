@@ -41,7 +41,7 @@ export const renderMarkdownWithTOC = (content: string): string => {
   let processedContent = content.replace(/^(#{2,4})\s+(.+)$/gm, (match, hashes, text) => {
     const level = hashes.length;
     const id = text.toLowerCase()
-      .replace /[^a-z0-9\s-]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
