@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
@@ -80,9 +81,10 @@ const BlogPost = () => {
         const blogData: Blog = {
           ...data,
           status: data.status as 'published' | 'draft',
-          application_link: data['Apply link'] // Map the database column to our interface
+          application_link: data.application_link || data['Apply link'] // Handle both column names
         };
         setBlog(blogData);
+        console.log('Blog application_link:', blogData.application_link);
       }
     } catch (err) {
       console.error('Unexpected error:', err);
@@ -142,14 +144,26 @@ const BlogPost = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      {/* Header - Same as home page but without admin login */}
+      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back to TalentSpur
-            </Link>
+            <div className="flex items-center gap-8">
+              <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                TalentSpur
+              </Link>
+              <nav className="hidden md:flex items-center gap-6">
+                <Link to="/" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  Home
+                </Link>
+                <Link to="/about" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  About
+                </Link>
+                <Link to="/contact" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  Contact
+                </Link>
+              </nav>
+            </div>
             <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
               <Share2 className="w-4 h-4" />
               Share
@@ -215,17 +229,19 @@ const BlogPost = () => {
               />
             </div>
 
-            {/* Apply Here Button */}
-            {blog.application_link && (
-              <div className="mt-12 mb-8 text-center">
+            {/* Apply Here Button - ENSURE IT RENDERS */}
+            {blog.application_link && blog.application_link.trim() !== '' && (
+              <div className="mt-12 mb-8 text-center bg-gradient-to-r from-blue-50 to-purple-50 p-8 rounded-2xl border border-blue-200">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Apply?</h3>
+                <p className="text-gray-600 mb-6">Don't miss this opportunity - apply now!</p>
                 <a
                   href={blog.application_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                  className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-12 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-lg"
                 >
-                  Apply Here
-                  <ExternalLink className="w-5 h-5" />
+                  🚀 Apply Here Now
+                  <ExternalLink className="w-6 h-6" />
                 </a>
               </div>
             )}
@@ -281,6 +297,51 @@ const BlogPost = () => {
           <RecentBlogs currentBlogId={blog.id} />
         </div>
       </div>
+
+      {/* Footer - Same as home page */}
+      <footer className="bg-gray-900 text-white mt-20">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
+                TalentSpur
+              </h3>
+              <p className="text-gray-400">
+                Connecting talent with opportunities through AI-powered job matching and career guidance.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><Link to="/" className="text-gray-400 hover:text-white transition-colors">Home</Link></li>
+                <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About</Link></li>
+                <li><Link to="/contact" className="text-gray-400 hover:text-white transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li><Link to="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Contact</h4>
+              <div className="text-gray-400">
+                <p>Email: hello@talentspur.com</p>
+                <p>Phone: (555) 123-4567</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 TalentSpur. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
 
       {/* CSS for markdown content */}
       <style>{`

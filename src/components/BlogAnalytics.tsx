@@ -42,11 +42,12 @@ export const BlogAnalytics = ({ blogId, blogTitle, onClose }: BlogAnalyticsProps
 
         if (error) throw error;
 
-        setTotalViews(blog.views);
+        setTotalViews(blog.views || 0);
         
-        // Generate mock date-wise data (since we don't have daily tracking yet)
-        const mockData = generateMockViewData(blog.created_at, blog.views);
-        setViewData(mockData);
+        // Since we don't have daily tracking yet, show simple data
+        setViewData([
+          { date: 'Total', views: blog.views || 0 }
+        ]);
       } else {
         // Fetch overall analytics
         const { data: blogs, error } = await supabase
@@ -56,61 +57,19 @@ export const BlogAnalytics = ({ blogId, blogTitle, onClose }: BlogAnalyticsProps
 
         if (error) throw error;
 
-        const total = blogs.reduce((sum, blog) => sum + blog.views, 0);
+        const total = blogs.reduce((sum, blog) => sum + (blog.views || 0), 0);
         setTotalViews(total);
 
-        // Generate aggregated mock data
-        const aggregatedData = generateAggregatedViewData(blogs);
-        setViewData(aggregatedData);
+        // Simple aggregated data
+        setViewData([
+          { date: 'All Blogs', views: total }
+        ]);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateMockViewData = (createdAt: string, totalViews: number) => {
-    const startDate = new Date(createdAt);
-    const today = new Date();
-    const data: ViewData[] = [];
-    
-    const daysDiff = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const viewsPerDay = Math.max(1, Math.floor(totalViews / Math.max(1, daysDiff)));
-    
-    for (let i = 0; i <= Math.min(daysDiff, 30); i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
-      
-      const views = i === 0 ? viewsPerDay : 
-                   Math.floor(Math.random() * viewsPerDay * 2);
-      
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        views
-      });
-    }
-    
-    return data;
-  };
-
-  const generateAggregatedViewData = (blogs: any[]) => {
-    const data: ViewData[] = [];
-    const today = new Date();
-    
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      
-      const dayViews = Math.floor(Math.random() * 100) + 20;
-      
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        views: dayViews
-      });
-    }
-    
-    return data;
   };
 
   const chartConfig = {
@@ -159,12 +118,12 @@ export const BlogAnalytics = ({ blogId, blogTitle, onClose }: BlogAnalyticsProps
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              Avg. Daily Views
+              Status
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(viewData.reduce((sum, day) => sum + day.views, 0) / Math.max(1, viewData.length))}
+              {blogId ? 'Individual' : 'All Blogs'}
             </div>
           </CardContent>
         </Card>
@@ -173,12 +132,12 @@ export const BlogAnalytics = ({ blogId, blogTitle, onClose }: BlogAnalyticsProps
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Peak Day
+              Type
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.max(...viewData.map(d => d.views))}
+              Real Data
             </div>
           </CardContent>
         </Card>
@@ -186,7 +145,7 @@ export const BlogAnalytics = ({ blogId, blogTitle, onClose }: BlogAnalyticsProps
 
       {/* Chart Controls */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Views Over Time</h3>
+        <h3 className="text-lg font-semibold">Views Data</h3>
         <div className="flex gap-2">
           <Button
             variant={chartType === 'line' ? 'default' : 'outline'}
