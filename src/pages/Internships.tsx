@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Calendar, User, ArrowRight, GraduationCap, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 interface Blog {
   id: string;
@@ -98,7 +99,7 @@ const Internships = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900">
       <Navigation />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -203,6 +204,8 @@ const Internships = () => {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 };

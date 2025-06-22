@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Calendar, User, ArrowRight, Clock, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 interface Blog {
   id: string;
@@ -203,6 +204,8 @@ const PartTime = () => {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 };
