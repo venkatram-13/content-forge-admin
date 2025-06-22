@@ -36,7 +36,7 @@ serve(async (req) => {
     const { action, ...data } = await req.json()
 
     if (action === 'create') {
-      const { title, content, featuredImage, author, status } = data
+      const { title, content, featuredImage, author, status, applicationLink, category } = data
       
       const slug = generateSlug(title)
       const excerpt = generateExcerpt(content)
@@ -50,7 +50,9 @@ serve(async (req) => {
           featured_image: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
           slug,
           author: author || 'Admin',
-          status: status || 'draft'
+          status: status || 'draft',
+          apply_link: applicationLink || null,
+          category: category || null
         }])
         .select()
         .single()
@@ -65,7 +67,7 @@ serve(async (req) => {
       )
 
     } else if (action === 'update') {
-      const { id, title, content, featuredImage, author, status } = data
+      const { blogId, title, content, featuredImage, author, status, applicationLink, category } = data
       
       const updates: any = {}
       if (title) {
@@ -79,11 +81,13 @@ serve(async (req) => {
       if (featuredImage) updates.featured_image = featuredImage
       if (author) updates.author = author
       if (status) updates.status = status
+      if (applicationLink !== undefined) updates.apply_link = applicationLink || null
+      if (category !== undefined) updates.category = category || null
 
       const { data: blog, error } = await supabase
         .from('blogs')
         .update(updates)
-        .eq('id', id)
+        .eq('id', blogId)
         .select()
         .single()
 

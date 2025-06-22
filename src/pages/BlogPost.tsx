@@ -20,7 +20,7 @@ interface Blog {
   author: string;
   slug: string;
   status: 'published' | 'draft';
-  application_link?: string;
+  apply_link?: string;
 }
 
 const AdPlaceholder = ({ id, className = "", label }: { id: string; className?: string; label: string }) => (
@@ -82,10 +82,10 @@ const BlogPost = () => {
         const blogData: Blog = {
           ...data,
           status: data.status as 'published' | 'draft',
-          application_link: data.apply_link || data['Apply link'] // Handle both possible column names
+          apply_link: data.apply_link
         };
         setBlog(blogData);
-        console.log('Blog application_link:', blogData.application_link);
+        console.log('Blog apply_link:', blogData.apply_link);
       }
     } catch (err) {
       console.error('Unexpected error:', err);
@@ -234,12 +234,12 @@ const BlogPost = () => {
             </div>
 
             {/* Apply Here Button - ENSURE IT RENDERS */}
-            {blog.application_link && blog.application_link.trim() !== '' && (
+            {blog.apply_link && blog.apply_link.trim() !== '' && (
               <div className="mt-12 mb-8 text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 p-8 rounded-2xl border border-blue-200 dark:border-blue-800">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Ready to Apply?</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">Don't miss this opportunity - apply now!</p>
                 <a
-                  href={blog.application_link}
+                  href={blog.apply_link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-12 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-lg"

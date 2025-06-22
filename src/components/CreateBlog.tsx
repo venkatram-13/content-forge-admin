@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Upload, Save, Link2, FileText, Sparkles, Image as ImageIcon, Edit } from 'lucide-react';
+import { Wand2, Upload, Save, Link2, FileText, Sparkles, Image as ImageIcon, Edit, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,7 +21,8 @@ interface Blog {
   author: string;
   slug: string;
   status: 'published' | 'draft';
-  application_link?: string;
+  apply_link?: string;
+  category?: string;
 }
 
 interface CreateBlogProps {
@@ -37,6 +39,7 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
   const [content, setContent] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
   const [applicationLink, setApplicationLink] = useState('');
+  const [category, setCategory] = useState('');
   const [author, setAuthor] = useState('Admin');
   const [isRewriting, setIsRewriting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -48,7 +51,8 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
       setTitle(existingBlog.title);
       setContent(existingBlog.content);
       setFeaturedImage(existingBlog.featured_image);
-      setApplicationLink(existingBlog.application_link || '');
+      setApplicationLink(existingBlog.apply_link || '');
+      setCategory(existingBlog.category || '');
       setAuthor(existingBlog.author);
     }
   }, [isEditing, existingBlog]);
@@ -151,6 +155,7 @@ ${sourceContent}
           featuredImage: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
           author: author.trim(),
           applicationLink: applicationLink.trim() || undefined,
+          category: category || undefined,
           status
         }
       });
@@ -182,6 +187,7 @@ ${sourceContent}
         setContent('');
         setFeaturedImage('');
         setApplicationLink('');
+        setCategory('');
       }
       
       toast({
@@ -330,18 +336,38 @@ ${sourceContent}
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="featuredImage" className="text-sm md:text-base font-medium flex items-center gap-2">
-              <ImageIcon className="w-3 h-3 md:w-4 md:h-4" />
-              Featured Image URL
-            </Label>
-            <Input
-              id="featuredImage"
-              value={featuredImage}
-              onChange={(e) => setFeaturedImage(e.target.value)}
-              placeholder="https://example.com/image.jpg (optional)"
-              className="mt-2 h-10 md:h-12"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div>
+              <Label htmlFor="category" className="text-sm md:text-base font-medium flex items-center gap-2">
+                <Briefcase className="w-3 h-3 md:w-4 md:h-4" />
+                Select Post Type
+              </Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="mt-2 h-10 md:h-12">
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full-time">Full-Time</SelectItem>
+                  <SelectItem value="part-time">Part-Time</SelectItem>
+                  <SelectItem value="internship">Internship</SelectItem>
+                  <SelectItem value="job">Job</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="featuredImage" className="text-sm md:text-base font-medium flex items-center gap-2">
+                <ImageIcon className="w-3 h-3 md:w-4 md:h-4" />
+                Featured Image URL
+              </Label>
+              <Input
+                id="featuredImage"
+                value={featuredImage}
+                onChange={(e) => setFeaturedImage(e.target.value)}
+                placeholder="https://example.com/image.jpg (optional)"
+                className="mt-2 h-10 md:h-12"
+              />
+            </div>
           </div>
 
           <div>

@@ -20,6 +20,7 @@ interface Blog {
   slug: string;
   status: 'published' | 'draft';
   views: number;
+  category?: string;
 }
 
 const Index = () => {
@@ -50,7 +51,8 @@ const Index = () => {
       const typedBlogs: Blog[] = (data || []).map(blog => ({
         ...blog,
         status: blog.status as 'published' | 'draft',
-        views: blog.views || 0
+        views: blog.views || 0,
+        category: blog.category || undefined
       }));
       setBlogs(typedBlogs);
     } catch (error) {
@@ -118,35 +120,50 @@ const Index = () => {
     });
   };
 
+  const getCategoryBadgeColor = (category?: string) => {
+    switch (category?.toLowerCase()) {
+      case 'full-time':
+        return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+      case 'part-time':
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'internship':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300';
+      case 'job':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+      default:
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900">
       <Navigation />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 rounded-full mb-6">
-            <Briefcase className="w-4 h-4 text-blue-600" />
-            <span className="text-blue-700 font-medium">AI-Powered Job Portal</span>
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 px-4 py-2 rounded-full mb-6">
+            <Briefcase className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-blue-700 dark:text-blue-300 font-medium">AI-Powered Job Portal</span>
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Find Your Dream 
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Career at TalentSpur</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
             Discover amazing job opportunities, internships, and career advancement paths with our AI-enhanced job matching platform.
           </p>
         </div>
 
         {/* Search */}
         <div className="relative max-w-2xl mx-auto mb-8">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
           <Input
             type="text"
             placeholder="Search jobs, internships, or companies..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12 h-14 text-lg bg-white/80 backdrop-blur-sm border-0 shadow-lg"
+            className="pl-12 h-14 text-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg dark:text-gray-100"
           />
         </div>
 
@@ -187,24 +204,24 @@ const Index = () => {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading amazing opportunities...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading amazing opportunities...</p>
           </div>
         ) : filteredBlogs.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-gray-400 dark:text-gray-500" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               {searchTerm ? 'No jobs found' : 'No opportunities yet'}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {searchTerm ? 'Try adjusting your search terms.' : 'New job opportunities coming soon!'}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredBlogs.map((blog) => (
-              <Card key={blog.id} className="group hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:-translate-y-2">
+              <Card key={blog.id} className="group hover:shadow-2xl transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg hover:-translate-y-2">
                 <div className="aspect-video overflow-hidden rounded-t-lg">
                   <img
                     src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop"}
@@ -214,25 +231,32 @@ const Index = () => {
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                      <Briefcase className="w-3 h-3 mr-1" />
-                      {activeFilter === 'top-airing' ? 'Top Airing' : 'Latest'}
-                    </Badge>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                        <Briefcase className="w-3 h-3 mr-1" />
+                        {activeFilter === 'top-airing' ? 'Top Airing' : 'Latest'}
+                      </Badge>
+                      {blog.category && (
+                        <Badge className={`text-xs ${getCategoryBadgeColor(blog.category)}`}>
+                          {blog.category}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                       <Eye className="w-3 h-3" />
                       {blog.views || 0}
                     </div>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                     {blog.title}
                   </h3>
                   
-                  <p className="text-gray-600 mb-4 line-clamp-3">
+                  <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
                     {blog.excerpt}
                   </p>
                   
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1">
                         <User className="w-4 h-4" />
@@ -263,7 +287,7 @@ const Index = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white/80 backdrop-blur-sm border-t border-white/20 mt-16">
+      <footer className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/20 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
@@ -275,31 +299,31 @@ const Index = () => {
                   TalentSpur
                 </h3>
               </div>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
                 The future of career discovery powered by artificial intelligence. 
                 Connect with top employers and find your dream job or internship.
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Platform</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Platform</h4>
               <div className="space-y-2">
-                <Link to="/about" className="block text-gray-600 hover:text-blue-600 transition-colors">About Us</Link>
-                <Link to="/contact" className="block text-gray-600 hover:text-blue-600 transition-colors">Contact Us</Link>
-                <Link to="/admin" className="block text-gray-600 hover:text-blue-600 transition-colors">Admin Portal</Link>
+                <Link to="/about" className="block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About Us</Link>
+                <Link to="/contact" className="block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact Us</Link>
+                <Link to="/admin" className="block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Admin Portal</Link>
               </div>
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Legal</h4>
               <div className="space-y-2">
-                <Link to="/privacy" className="block text-gray-600 hover:text-blue-600 transition-colors">Privacy Policy</Link>
-                <Link to="/terms" className="block text-gray-600 hover:text-blue-600 transition-colors">Terms & Conditions</Link>
+                <Link to="/privacy" className="block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms & Conditions</Link>
               </div>
             </div>
           </div>
           
-          <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-600">
+          <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8 text-center text-gray-600 dark:text-gray-400">
             <p>&copy; 2024 TalentSpur. All rights reserved. Powered by artificial intelligence.</p>
           </div>
         </div>
