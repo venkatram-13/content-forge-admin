@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -71,20 +70,11 @@ const Jobs = () => {
 
   const handleBlogClick = async (blogId: string) => {
     try {
-      const { data: currentBlog, error: fetchError } = await supabase
-        .from('blogs')
-        .select('views')
-        .eq('id', blogId)
-        .single();
+      const { error } = await supabase.rpc('increment_blog_view', {
+        blog_uuid: blogId
+      });
 
-      if (fetchError) throw fetchError;
-
-      const { error: updateError } = await supabase
-        .from('blogs')
-        .update({ views: (currentBlog.views || 0) + 1 })
-        .eq('id', blogId);
-
-      if (updateError) throw updateError;
+      if (error) throw error;
 
       setBlogs(prevBlogs => 
         prevBlogs.map(blog => 

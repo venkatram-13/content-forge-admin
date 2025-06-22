@@ -30,6 +30,41 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_view_analytics: {
+        Row: {
+          blog_id: string | null
+          created_at: string
+          daily_views: number
+          id: string
+          updated_at: string
+          view_date: string
+        }
+        Insert: {
+          blog_id?: string | null
+          created_at?: string
+          daily_views?: number
+          id?: string
+          updated_at?: string
+          view_date?: string
+        }
+        Update: {
+          blog_id?: string | null
+          created_at?: string
+          daily_views?: number
+          id?: string
+          updated_at?: string
+          view_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_view_analytics_blog_id_fkey"
+            columns: ["blog_id"]
+            isOneToOne: false
+            referencedRelation: "blogs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blogs: {
         Row: {
           apply_link: string | null
@@ -83,7 +118,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_blog_view: {
+        Args: { blog_uuid: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

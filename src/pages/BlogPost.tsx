@@ -85,7 +85,18 @@ const BlogPost = () => {
           apply_link: data.apply_link
         };
         setBlog(blogData);
-        console.log('Blog apply_link:', blogData.apply_link);
+        
+        // Increment view count using the new database function
+        try {
+          const { error: viewError } = await supabase.rpc('increment_blog_view', {
+            blog_uuid: data.id
+          });
+          if (viewError) {
+            console.error('Error incrementing view count:', viewError);
+          }
+        } catch (viewErr) {
+          console.error('Error incrementing view count:', viewErr);
+        }
       }
     } catch (err) {
       console.error('Unexpected error:', err);
