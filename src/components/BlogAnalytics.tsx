@@ -91,7 +91,7 @@ export const BlogAnalytics = ({ blogId, blogTitle, onClose }: BlogAnalyticsProps
         });
 
         // Format data for charts
-        const formattedData = Object.entries(dateAggregation).map([date, views]) => ({
+        const formattedData = Object.entries(dateAggregation).map(([date, views]) => ({
           date: new Date(date).toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric' 
