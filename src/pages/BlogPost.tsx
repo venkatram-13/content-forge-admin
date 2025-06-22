@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
@@ -81,7 +80,7 @@ const BlogPost = () => {
         const blogData: Blog = {
           ...data,
           status: data.status as 'published' | 'draft',
-          application_link: data.application_link || data['Apply link'] // Handle both column names
+          application_link: data.apply_link || data['Apply link'] // Handle both possible column names
         };
         setBlog(blogData);
         console.log('Blog application_link:', blogData.application_link);
