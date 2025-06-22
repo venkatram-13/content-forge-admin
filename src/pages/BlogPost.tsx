@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { TableOfContents, TOCItem } from '@/components/TableOfContents';
 import { RecentBlogs } from '@/components/RecentBlogs';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { generateTableOfContents, renderMarkdownWithTOC } from '@/utils/markdownRenderer';
 
@@ -24,7 +26,7 @@ interface Blog {
 const AdPlaceholder = ({ id, className = "", label }: { id: string; className?: string; label: string }) => (
   <div 
     id={id} 
-    className={`bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 text-sm font-medium ${className}`}
+    className={`bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium ${className}`}
   >
     {/* AdSense Placeholder - {label} */}
     <span className="opacity-50">Ad Space - {label}</span>
@@ -116,19 +118,19 @@ const BlogPost = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="animate-pulse text-lg text-gray-900 dark:text-gray-100">Loading...</div>
       </div>
     );
   }
 
   if (error || !blog) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <Card className="max-w-md mx-auto">
           <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Blog Not Found</h2>
-            <p className="text-gray-600 mb-6">{error || "The blog post you're looking for doesn't exist."}</p>
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Blog Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || "The blog post you're looking for doesn't exist."}</p>
             <Link to="/">
               <Button>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -142,9 +144,9 @@ const BlogPost = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       {/* Header - Same as home page but without admin login */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b sticky top-0 z-50">
+      <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
@@ -152,21 +154,24 @@ const BlogPost = () => {
                 TalentSpur
               </Link>
               <nav className="hidden md:flex items-center gap-6">
-                <Link to="/" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <Link to="/" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                   Home
                 </Link>
-                <Link to="/about" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <Link to="/about" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                   About
                 </Link>
-                <Link to="/contact" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <Link to="/contact" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                   Contact
                 </Link>
               </nav>
             </div>
-            <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
-              <Share2 className="w-4 h-4" />
-              Share
-            </Button>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
+                <Share2 className="w-4 h-4" />
+                Share
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -194,11 +199,11 @@ const BlogPost = () => {
 
             {/* Article Header */}
             <header className="mb-8">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
                 {blog.title}
               </h1>
               
-              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-600">
+              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 md:w-5 md:h-5" />
                   <span className="font-medium text-sm md:text-base">{blog.author}</span>
@@ -214,7 +219,7 @@ const BlogPost = () => {
             <TableOfContents items={toc} />
 
             {/* Article Content with Rendered Markdown */}
-            <div className="prose prose-sm md:prose-lg max-w-none">
+            <div className="prose prose-sm md:prose-lg max-w-none dark:prose-invert">
               {/* In-Content Ad after TOC */}
               <AdPlaceholder 
                 id="ads-middle" 
@@ -230,9 +235,9 @@ const BlogPost = () => {
 
             {/* Apply Here Button - ENSURE IT RENDERS */}
             {blog.application_link && blog.application_link.trim() !== '' && (
-              <div className="mt-12 mb-8 text-center bg-gradient-to-r from-blue-50 to-purple-50 p-8 rounded-2xl border border-blue-200">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Apply?</h3>
-                <p className="text-gray-600 mb-6">Don't miss this opportunity - apply now!</p>
+              <div className="mt-12 mb-8 text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 p-8 rounded-2xl border border-blue-200 dark:border-blue-800">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Ready to Apply?</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">Don't miss this opportunity - apply now!</p>
                 <a
                   href={blog.application_link}
                   target="_blank"
@@ -253,9 +258,9 @@ const BlogPost = () => {
             />
 
             {/* Article Footer */}
-            <footer className="mt-12 pt-8 border-t">
+            <footer className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Published on {formatDate(blog.created_at)}
                 </div>
                 <Button variant="outline" onClick={handleShare} className="flex items-center gap-2">
@@ -292,13 +297,13 @@ const BlogPost = () => {
         </div>
 
         {/* Recent Blogs Section */}
-        <div className="mt-16 pt-12 border-t border-gray-200">
+        <div className="mt-16 pt-12 border-t border-gray-200 dark:border-gray-700">
           <RecentBlogs currentBlogId={blog.id} />
         </div>
       </div>
 
       {/* Footer - Same as home page */}
-      <footer className="bg-gray-900 text-white mt-20">
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white mt-20">
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -353,12 +358,19 @@ const BlogPost = () => {
           border-bottom: 2px solid #e5e7eb;
           padding-bottom: 0.5rem;
         }
+        .dark .markdown-content h2 {
+          color: #f9fafb;
+          border-bottom-color: #374151;
+        }
         .markdown-content h3 {
           font-size: 1.5rem;
           font-weight: 600;
           margin-top: 1.5rem;
           margin-bottom: 0.75rem;
           color: #374151;
+        }
+        .dark .markdown-content h3 {
+          color: #e5e7eb;
         }
         .markdown-content h4 {
           font-size: 1.25rem;
@@ -367,23 +379,40 @@ const BlogPost = () => {
           margin-bottom: 0.5rem;
           color: #4b5563;
         }
-        .markdown-content ul, .markdown-content ol {
-          margin: 1rem 0;
-          padding-left: 1.5rem;
-        }
-        .markdown-content li {
-          margin: 0.5rem 0;
+        .dark .markdown-content h4 {
+          color: #d1d5db;
         }
         .markdown-content p {
           margin: 1rem 0;
           line-height: 1.7;
+          color: #374151;
+        }
+        .dark .markdown-content p {
+          color: #d1d5db;
+        }
+        .markdown-content ul, .markdown-content ol {
+          margin: 1rem 0;
+          padding-left: 1.5rem;
+          color: #374151;
+        }
+        .dark .markdown-content ul, .dark .markdown-content ol {
+          color: #d1d5db;
+        }
+        .markdown-content li {
+          margin: 0.5rem 0;
         }
         .markdown-content a {
           color: #2563eb;
           text-decoration: underline;
         }
+        .dark .markdown-content a {
+          color: #60a5fa;
+        }
         .markdown-content a:hover {
           color: #1d4ed8;
+        }
+        .dark .markdown-content a:hover {
+          color: #93c5fd;
         }
         .markdown-content strong {
           font-weight: 700;
@@ -396,6 +425,11 @@ const BlogPost = () => {
           padding: 0.125rem 0.25rem;
           border-radius: 0.25rem;
           font-family: ui-monospace, monospace;
+          color: #1f2937;
+        }
+        .dark .markdown-content code {
+          background-color: #374151;
+          color: #f9fafb;
         }
         .markdown-content pre {
           background-color: #f3f4f6;
@@ -403,6 +437,9 @@ const BlogPost = () => {
           border-radius: 0.5rem;
           overflow-x: auto;
           margin: 1rem 0;
+        }
+        .dark .markdown-content pre {
+          background-color: #374151;
         }
         .markdown-content img {
           max-width: 100%;
