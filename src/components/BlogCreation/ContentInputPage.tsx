@@ -6,15 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Link2, FileText, Sparkles, ArrowRight, Eye, AlertCircle, RotateCcw } from 'lucide-react';
+import { Wand2, Link2, FileText, Sparkles, ArrowRight, Eye, AlertCircle, RotateCcw, Skip } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ContentInputPageProps {
   onContentRewritten: (rewrittenContent: string, title: string) => void;
+  onSkip: () => void;
 }
 
-export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) => {
+export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPageProps) => {
   const [inputType, setInputType] = useState<'url' | 'text'>('text');
   const [url, setUrl] = useState('');
   const [rawText, setRawText] = useState('');
@@ -59,7 +60,19 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
 
       if (error) {
         console.error('Supabase function error:', error);
-        throw new Error(`API Error: ${error.message || 'Failed to connect to AI service'}`);
+        
+        // Check if it's a configuration error
+        if (error.message?.includes('non-2xx status code')) {
+          toast({
+            title: "Configuration Error",
+            description: "Gemini API key is not configured. Please contact the administrator to set up the GEMINI_API_KEY in Supabase Edge Function Secrets.",
+            variant: "destructive",
+          });
+        } else {
+          throw new Error(`API Error: ${error.message || 'Failed to connect to AI service'}`);
+        }
+        setIsRewriting(false);
+        return;
       }
       
       if (!data) {
@@ -69,7 +82,23 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
 
       if (data.error && !data.success) {
         console.error('Gemini API error:', data.error);
-        throw new Error(data.error || 'AI generation failed');
+        
+        // Handle specific API key error
+        if (data.error.includes('API key not configured')) {
+          toast({
+            title: "Configuration Required",
+            description: "Gemini API key is not configured. Please contact the administrator to add GEMINI_API_KEY to Supabase Edge Function Secrets.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "AI Enhancement Failed",
+            description: data.error || 'AI generation failed',
+            variant: "destructive",
+          });
+        }
+        setIsRewriting(false);
+        return;
       }
 
       if (data.success && data.content) {
@@ -112,6 +141,14 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
     if (rewrittenContent && rewrittenTitle) {
       onContentRewritten(rewrittenContent, rewrittenTitle);
     }
+  };
+
+  const handleSkip = () => {
+    toast({
+      title: "Skipped AI Enhancement",
+      description: "You can manually fill in the blog content in the next step.",
+    });
+    onSkip();
   };
 
   const renderMarkdownPreview = (markdown: string) => {
@@ -216,6 +253,9 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
             </div>
             Step 1: Content Input & AI Enhancement
           </CardTitle>
+          <p className="text-gray-600 mt-2">
+            Provide content to enhance with AI, or skip to manually create your blog post
+          </p>
         </CardHeader>
         <CardContent>
           <Tabs value={inputType} onValueChange={(value) => setInputType(value as 'url' | 'text')}>
@@ -266,31 +306,42 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
           </Tabs>
 
           {!canProceed && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-              <AlertCircle className="w-4 h-4 text-yellow-600" />
-              <p className="text-sm text-yellow-700">
-                Please provide {inputType === 'url' ? 'a URL' : 'text content'} to continue
+            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+              <AlertCircle className="w-4 h-4 text-blue-600" />
+              <p className="text-sm text-blue-700">
+                Provide {inputType === 'url' ? 'a URL' : 'text content'} to enhance with AI, or skip to create manually
               </p>
             </div>
           )}
 
-          <Button 
-            onClick={rewriteWithAI} 
-            disabled={isRewriting || !canProceed}
-            className="w-full h-12 md:h-14 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-sm md:text-lg mt-6"
-          >
-            {isRewriting ? (
-              <>
-                <Wand2 className="w-4 h-4 md:w-5 md:h-5 mr-2 animate-spin" />
-                AI is Generating Content...
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                ✨ Generate with AI
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <Button 
+              onClick={rewriteWithAI} 
+              disabled={isRewriting || !canProceed}
+              className="flex-1 h-12 md:h-14 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-sm md:text-lg"
+            >
+              {isRewriting ? (
+                <>
+                  <Wand2 className="w-4 h-4 md:w-5 md:h-5 mr-2 animate-spin" />
+                  AI is Generating Content...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                  ✨ Generate with AI
+                </>
+              )}
+            </Button>
+
+            <Button 
+              onClick={handleSkip}
+              variant="outline"
+              className="flex-1 h-12 md:h-14 text-sm md:text-lg border-2 hover:bg-gray-50"
+            >
+              <Skip className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+              Skip & Create Manually
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

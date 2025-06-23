@@ -30,12 +30,24 @@ export const TwoPageBlogCreation = ({ onBlogCreated }: TwoPageBlogCreationProps)
     setCurrentPage('setup');
   };
 
+  const handleSkip = () => {
+    // When skipping, we go directly to setup with empty content
+    setRewrittenContent('');
+    setRewrittenTitle('');
+    setCurrentPage('setup');
+  };
+
   const handleBackToInput = () => {
     setCurrentPage('input');
   };
 
   if (currentPage === 'input') {
-    return <ContentInputPage onContentRewritten={handleContentRewritten} />;
+    return (
+      <ContentInputPage 
+        onContentRewritten={handleContentRewritten}
+        onSkip={handleSkip}
+      />
+    );
   }
 
   return (
