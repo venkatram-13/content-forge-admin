@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Plus, Settings, LogOut, Edit, FileText, BarChart3, Users, Globe, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreateBlog } from './CreateBlog';
+import { TwoPageBlogCreation } from './TwoPageBlogCreation';
 import { AdminSettings } from './AdminSettings';
 import { BlogManager } from './BlogManager';
 import { BlogAnalytics } from './BlogAnalytics';
@@ -250,7 +249,7 @@ export const AdminDashboard = () => {
         )}
 
         {activeTab === 'create' && (
-          <CreateBlog onBlogCreated={handleBlogCreated} />
+          <TwoPageBlogCreation onBlogCreated={handleBlogCreated} />
         )}
 
         {activeTab === 'manage' && (

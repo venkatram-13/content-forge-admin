@@ -45,11 +45,17 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
         body: { 
           content: sourceContent, 
           inputType,
-          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Minimum 1000 words, 2) Rich in value and actionable insights, 3) Include multiple subheadings (##, ###), 4) Use bullet points and numbered lists, 5) Professional and helpful tone for job seekers, 6) Format in proper Markdown with headers and structured sections, 7) Include sections like job requirements, benefits, company culture, application process, etc."
+          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Minimum 1500 words, 2) Rich in value and actionable insights, 3) Include multiple subheadings (##, ###), 4) Use bullet points and numbered lists, 5) Professional and helpful tone for job seekers, 6) Format in proper Markdown with headers and structured sections, 7) Include sections like job requirements, benefits, company culture, application process, etc. Make sure to create original, detailed content that expands significantly on the provided input."
         }
       });
 
-      console.log('Gemini API response:', { data, error, hasContent: !!data?.content });
+      console.log('Gemini API response received:', { 
+        hasData: !!data, 
+        hasError: !!error, 
+        success: data?.success,
+        hasContent: !!data?.content,
+        contentLength: data?.content?.length 
+      });
 
       if (error) {
         console.error('Supabase function error:', error);
@@ -57,6 +63,7 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
       }
       
       if (!data) {
+        console.error('No data received from Gemini API');
         throw new Error('No response received from AI service');
       }
 
@@ -87,6 +94,7 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
         setRewrittenContent(data.content);
         setShowPreview(true);
       } else {
+        console.error('Gemini API returned no content:', data);
         throw new Error('AI service returned no content');
       }
     } catch (error) {
@@ -109,15 +117,15 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
   const renderMarkdownPreview = (markdown: string) => {
     // Simple markdown to HTML conversion for preview
     return markdown
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 border-b pb-2">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>')
-      .replace(/^\* (.*$)/gim, '<li class="ml-4">$1</li>')
-      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4">$1</li>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      .replace(/^(?!<[hli])/gm, '<p class="mb-4">')
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-800">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 border-b border-gray-200 pb-2 text-gray-900">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-gray-900">$1</h1>')
+      .replace(/^\* (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700">• $1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700">$1</li>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic text-gray-800">$1</em>')
+      .replace(/\n\n/g, '</p><p class="mb-4 text-gray-700 leading-relaxed">')
+      .replace(/^(?!<[hli])/gm, '<p class="mb-4 text-gray-700 leading-relaxed">')
       .replace(/(?<!>)$/gm, '</p>');
   };
 
@@ -137,7 +145,7 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <Label className="text-lg font-semibold">Generated Title:</Label>
+              <Label className="text-lg font-semibold text-gray-800">Generated Title:</Label>
               <h2 className="text-2xl font-bold text-gray-900 mt-2">{rewrittenTitle}</h2>
             </div>
             
@@ -165,7 +173,7 @@ export const ContentInputPage = ({ onContentRewritten }: ContentInputPageProps) 
               
               <TabsContent value="markdown" className="mt-4">
                 <div className="p-4 bg-gray-50 rounded-lg max-h-96 overflow-y-auto border font-mono text-sm">
-                  <pre className="whitespace-pre-wrap">{rewrittenContent}</pre>
+                  <pre className="whitespace-pre-wrap text-gray-800">{rewrittenContent}</pre>
                 </div>
               </TabsContent>
             </Tabs>
