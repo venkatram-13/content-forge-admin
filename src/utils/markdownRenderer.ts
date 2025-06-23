@@ -20,7 +20,11 @@ export const generateTableOfContents = (content: string): TOCItem[] => {
 
   while ((match = headingRegex.exec(content)) !== null) {
     const level = match[1].length;
-    const text = match[2].trim();
+    let text = match[2].trim();
+    
+    // Remove HTML tags from heading text for TOC display
+    text = text.replace(/<[^>]*>/g, '').trim();
+    
     const id = text.toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
@@ -40,7 +44,8 @@ export const renderMarkdownWithTOC = async (content: string): Promise<string> =>
   // Add IDs to headings for anchor linking
   let processedContent = content.replace(/^(#{2,4})\s+(.+)$/gm, (match, hashes, text) => {
     const level = hashes.length;
-    const id = text.toLowerCase()
+    const cleanText = text.replace(/<[^>]*>/g, '').trim();
+    const id = cleanText.toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')

@@ -45,7 +45,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
         body: { 
           content: sourceContent, 
           inputType,
-          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Minimum 1500 words, 2) Rich in value and actionable insights, 3) Include multiple subheadings (##, ###), 4) Use bullet points and numbered lists, 5) Professional and helpful tone for job seekers, 6) Format in proper Markdown with headers and structured sections, 7) Include sections like job requirements, benefits, company culture, application process, etc. Make sure to create original, detailed content that expands significantly on the provided input."
+          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Minimum 1000 words, 2) Rich in value and actionable insights, 3) Include multiple subheadings (##, ###), 4) Use bullet points and numbered lists, 5) Professional and helpful tone for job seekers, 6) Format in proper Markdown with headers and structured sections, 7) Include sections like job requirements, benefits, company culture, application process, etc. Make sure to create original, detailed content that expands significantly on the provided input."
         }
       });
 
@@ -105,7 +105,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
         
         console.log(`Content generated successfully with ${wordCount} words`);
         
-        if (wordCount < 500) {
+        if (wordCount < 1000) {
           toast({
             title: "Content Generated",
             description: `AI generated ${wordCount} words. For longer content, try providing more detailed source material.`,
@@ -151,18 +151,22 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
   };
 
   const renderMarkdownPreview = (markdown: string) => {
-    // Simple markdown to HTML conversion for preview
+    // Improved markdown to HTML conversion for preview
     return markdown
+      .replace(/^#### (.*$)/gim, '<h4 class="text-base font-semibold mt-3 mb-2 text-gray-800">$1</h4>')
       .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-800">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 border-b border-gray-200 pb-2 text-gray-900">$1</h2>')
       .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-gray-900">$1</h1>')
-      .replace(/^\* (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700">• $1</li>')
-      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700">$1</li>')
+      .replace(/^\- (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 list-disc">$1</li>')
+      .replace(/^\* (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 list-disc">$1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 list-decimal">$1</li>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em class="italic text-gray-800">$1</em>')
-      .replace(/\n\n/g, '</p><p class="mb-4 text-gray-700 leading-relaxed">')
-      .replace(/^(?!<[hli])/gm, '<p class="mb-4 text-gray-700 leading-relaxed">')
-      .replace(/(?<!>)$/gm, '</p>');
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>')
+      .split('<br><br>')
+      .map(paragraph => paragraph.trim() ? `<p class="mb-4 text-gray-700 leading-relaxed">${paragraph}</p>` : '')
+      .join('');
   };
 
   const canProceed = inputType === 'url' ? url.trim() : rawText.trim();

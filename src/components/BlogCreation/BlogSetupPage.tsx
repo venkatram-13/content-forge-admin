@@ -1,11 +1,11 @@
-
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye, Plus, Type, ArrowLeft } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye, Plus, Type, ArrowLeft, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,14 +27,15 @@ interface Blog {
   slug: string;
   status: 'published' | 'draft';
   application_link?: string;
+  category?: string;
 }
 
 export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onBack }: BlogSetupPageProps) => {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [featuredImage, setFeaturedImage] = useState('');
-  const [thumbnailImage, setThumbnailImage] = useState('');
   const [applicationLink, setApplicationLink] = useState('');
+  const [category, setCategory] = useState('');
   const [author, setAuthor] = useState('Admin');
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -203,10 +204,10 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
       return false;
     }
     
-    if (wordCount < 1500) {
+    if (wordCount < 1000) {
       toast({
         title: "Content Too Short",
-        description: `Your content has ${wordCount} words. Minimum 1500 words required.`,
+        description: `Your content has ${wordCount} words. Minimum 1000 words required.`,
         variant: "destructive",
       });
       return false;
@@ -242,6 +243,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           featuredImage: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
           author: author.trim(),
           applicationLink: applicationLink.trim() || undefined,
+          category: category || undefined,
           status
         }
       });
@@ -290,7 +292,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-xl md:text-2xl">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Eye className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                <Eye className="w-4 h-4" />
               </div>
               Final Preview
             </CardTitle>
@@ -396,7 +398,27 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div>
+              <Label htmlFor="category" className="text-sm md:text-base font-medium flex items-center gap-2">
+                <Briefcase className="w-3 h-3 md:w-4 md:h-4" />
+                Category *
+              </Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="mt-2 h-10 md:h-12">
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full-time">Full-Time</SelectItem>
+                  <SelectItem value="part-time">Part-Time</SelectItem>
+                  <SelectItem value="internship">Internship</SelectItem>
+                  <SelectItem value="contract">Contract</SelectItem>
+                  <SelectItem value="remote">Remote</SelectItem>
+                  <SelectItem value="freelance">Freelance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="featuredImage" className="text-sm md:text-base font-medium flex items-center gap-2">
                 <ImageIcon className="w-3 h-3 md:w-4 md:h-4" />
@@ -409,57 +431,39 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 placeholder="https://example.com/featured-image.jpg"
                 className="mt-2 h-10 md:h-12"
               />
-              {featuredImage && (
-                <div className="mt-2">
-                  <img src={featuredImage} alt="Featured" className="w-full h-32 object-cover rounded border" />
-                </div>
-              )}
             </div>
 
             <div>
-              <Label htmlFor="thumbnailImage" className="text-sm md:text-base font-medium flex items-center gap-2">
-                <ImageIcon className="w-3 h-3 md:w-4 md:h-4" />
-                Thumbnail Image URL
+              <Label htmlFor="applicationLink" className="text-sm md:text-base font-medium flex items-center gap-2">
+                <Link className="w-3 h-3 md:w-4 md:h-4" />
+                Application Link
               </Label>
               <Input
-                id="thumbnailImage"
-                value={thumbnailImage}
-                onChange={(e) => setThumbnailImage(e.target.value)}
-                placeholder="https://example.com/thumbnail.jpg (optional)"
+                id="applicationLink"
+                value={applicationLink}
+                onChange={(e) => setApplicationLink(e.target.value)}
+                placeholder="https://example.com/apply"
                 className="mt-2 h-10 md:h-12"
               />
-              {thumbnailImage && (
-                <div className="mt-2">
-                  <img src={thumbnailImage} alt="Thumbnail" className="w-full h-32 object-cover rounded border" />
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Application Link Field */}
-          <div>
-            <Label htmlFor="applicationLink" className="text-sm md:text-base font-medium flex items-center gap-2">
-              <Link className="w-3 h-3 md:w-4 md:h-4" />
-              Application Link (Optional)
-            </Label>
-            <Input
-              id="applicationLink"
-              value={applicationLink}
-              onChange={(e) => setApplicationLink(e.target.value)}
-              placeholder="https://example.com/apply (will show as 'Apply Here' button on blog)"
-              className="mt-2 h-10 md:h-12"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              If provided, an "Apply Here" button will appear at the bottom of the blog post
-            </p>
-          </div>
+          {/* Featured Image Preview (without full image preview) */}
+          {featuredImage && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-600">Featured Image Preview:</p>
+              <div className="w-full h-32 bg-gray-100 rounded border flex items-center justify-center mt-1">
+                <p className="text-sm text-gray-500">Image URL: {featuredImage.substring(0, 50)}...</p>
+              </div>
+            </div>
+          )}
 
           {/* Rich Text Editor */}
           <div>
             <Label htmlFor="content" className="text-sm md:text-base font-medium">
-              Rich Text Editor ({wordCount} words - Min: 1500) 
-              <span className={wordCount < 1500 ? "text-red-500 ml-2" : "text-green-500 ml-2"}>
-                {wordCount < 1500 ? `Need ${1500 - wordCount} more words` : "✓ Word count met"}
+              Rich Text Editor ({wordCount} words - Min: 1000) 
+              <span className={wordCount < 1000 ? "text-red-500 ml-2" : "text-green-500 ml-2"}>
+                {wordCount < 1000 ? `Need ${1000 - wordCount} more words` : "✓ Word count met"}
               </span>
             </Label>
             
@@ -596,7 +600,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             <p className="text-xs text-gray-500 mt-2">
               💡 <strong>Pro Tips:</strong> Select text before applying formatting (bold, italic, etc.). 
               Upload images directly using the 📷 button. Create CTA buttons with custom URLs. 
-              Minimum 1500 words required for publication.
+              Minimum 1000 words required for publication.
             </p>
           </div>
 
