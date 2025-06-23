@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, Link2, FileText, Sparkles, ArrowRight, Eye, AlertCircle, RotateCcw, Skip } from 'lucide-react';
+import { Wand2, Link2, FileText, Sparkles, ArrowRight, Eye, AlertCircle, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -338,7 +337,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
               variant="outline"
               className="flex-1 h-12 md:h-14 text-sm md:text-lg border-2 hover:bg-gray-50"
             >
-              <Skip className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+              <ArrowRight className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               Skip & Create Manually
             </Button>
           </div>
