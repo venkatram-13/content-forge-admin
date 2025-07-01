@@ -38,13 +38,13 @@ export const ThemeToggle = () => {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      className="relative w-10 h-10 rounded-full bg-gradient-to-r from-orange-100 to-blue-100 dark:from-slate-700 dark:to-slate-600 hover:from-orange-200 hover:to-blue-200 dark:hover:from-slate-600 dark:hover:to-slate-500 transition-all duration-300 shadow-md hover:shadow-lg"
       aria-label="Toggle theme"
     >
       {isDark ? (
-        <Sun className="w-5 h-5 text-yellow-500" />
+        <Sun className="w-5 h-5 text-orange-500 transition-transform duration-300 rotate-0 scale-100" />
       ) : (
-        <Moon className="w-5 h-5 text-gray-600" />
+        <Moon className="w-5 h-5 text-blue-600 transition-transform duration-300 rotate-0 scale-100" />
       )}
     </Button>
   );

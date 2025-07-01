@@ -9,10 +9,10 @@ const Admin = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-violet-50/30 to-pink-50/30 dark:from-slate-900 dark:via-violet-900/10 dark:to-pink-900/10">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-700 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading...</div>
+          <div className="w-16 h-16 border-4 border-violet-200 dark:border-violet-700 border-t-violet-600 dark:border-t-violet-400 rounded-full animate-spin mx-auto mb-6"></div>
+          <div className="text-xl font-semibold bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Loading...</div>
         </div>
       </div>
     );
