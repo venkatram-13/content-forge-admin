@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,34 +57,6 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
     }
   };
 
-  const handlePublish = async (blogId: string) => {
-    setLoading(blogId);
-    try {
-      const { data, error } = await supabase.functions.invoke('blog-operations', {
-        body: { 
-          action: 'update', 
-          blogId,
-          updates: { status: 'published' }
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.success) {
-        const updatedBlogs = blogs.map(blog => 
-          blog.id === blogId ? { ...blog, status: 'published' as const } : blog
-        );
-        onBlogsUpdated(updatedBlogs);
-        toast.success('Blog published successfully!');
-      }
-    } catch (error) {
-      console.error('Error publishing blog:', error);
-      toast.error('Failed to publish blog');
-    } finally {
-      setLoading(null);
-    }
-  };
-
   const handleEditComplete = (updatedBlog: Blog) => {
     const updatedBlogs = blogs.map(blog => 
       blog.id === updatedBlog.id ? updatedBlog : blog
@@ -114,11 +87,11 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
   if (blogs.length === 0) {
     return (
       <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl">
-        <CardContent className="p-12 text-center">
+        <CardContent className="p-8 md:p-12 text-center">
           <div className="text-gray-500 dark:text-gray-400 mb-4">
-            <Edit className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-semibold mb-2">No blogs created yet</h3>
-            <p>Create your first blog to get started!</p>
+            <Edit className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg md:text-xl font-semibold mb-2">No blogs created yet</h3>
+            <p className="text-sm md:text-base">Create your first blog to get started!</p>
           </div>
         </CardContent>
       </Card>
@@ -126,28 +99,35 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Blogs</h2>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Manage Blogs</h2>
         <div className="text-sm text-gray-500 dark:text-gray-400">
           {blogs.length} blog{blogs.length !== 1 ? 's' : ''} total
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 md:gap-6">
         {blogs.map((blog) => (
           <Card key={blog.id} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <CardTitle className="text-lg text-gray-900 dark:text-white">{blog.title}</CardTitle>
-                    <Badge variant={blog.status === 'published' ? 'default' : 'secondary'}>
+            <CardHeader className="pb-3">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                    <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white line-clamp-2 break-words">
+                      {blog.title}
+                    </CardTitle>
+                    <Badge 
+                      variant={blog.status === 'published' ? 'default' : 'secondary'}
+                      className="w-fit"
+                    >
                       {blog.status}
                     </Badge>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{blog.excerpt}</p>
-                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2 break-words">
+                    {blog.excerpt}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs text-gray-500 dark:text-gray-400">
                     <span>By {blog.author}</span>
                     <span>{formatDate(blog.created_at)}</span>
                     <span className="flex items-center gap-1">
@@ -160,30 +140,31 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
                   <img
                     src={blog.featured_image}
                     alt={blog.title}
-                    className="w-20 h-20 object-cover rounded-lg ml-4"
+                    className="w-full sm:w-20 h-20 object-cover rounded-lg md:ml-4 flex-shrink-0"
                   />
                 )}
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => openAnalytics(blog)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-xs"
                 >
-                  <BarChart3 className="w-4 h-4" />
-                  Analytics
+                  <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                  <span className="sm:hidden">Stats</span>
                 </Button>
                 
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => openEdit(blog)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-xs"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-3 h-3 md:w-4 md:h-4" />
                   Edit
                 </Button>
                 
@@ -192,24 +173,13 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
                     variant="outline"
                     size="sm"
                     asChild
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-xs"
                   >
                     <a href={`/blog/${blog.slug}`} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-4 h-4" />
-                      View
+                      <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
+                      <span className="hidden sm:inline">View</span>
+                      <span className="sm:hidden">Open</span>
                     </a>
-                  </Button>
-                )}
-                
-                {blog.status === 'draft' && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handlePublish(blog.id)}
-                    disabled={loading === blog.id}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Publish
                   </Button>
                 )}
                 
@@ -218,25 +188,26 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-xs"
                       disabled={loading === blog.id}
                     >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
+                      <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                      <span className="hidden sm:inline">Delete</span>
+                      <span className="sm:hidden">Del</span>
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="max-w-sm mx-4 md:max-w-md">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Blog</AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogDescription className="text-sm">
                         Are you sure you want to delete "{blog.title}"? This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => handleDelete(blog.id)}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
                       >
                         Delete
                       </AlertDialogAction>
@@ -251,7 +222,7 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
 
       {/* Analytics Modal */}
       <Dialog open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Blog Analytics</DialogTitle>
           </DialogHeader>
@@ -267,7 +238,7 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
 
       {/* Edit Modal */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Blog</DialogTitle>
           </DialogHeader>

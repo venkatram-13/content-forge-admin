@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { TableOfContents, TOCItem } from '@/components/TableOfContents';
 import { RecentBlogs } from '@/components/RecentBlogs';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ScrollToTop } from '@/components/ScrollToTop';
 import { supabase } from '@/integrations/supabase/client';
 import { generateTableOfContents, renderMarkdownWithTOC } from '@/utils/markdownRenderer';
 
@@ -312,6 +312,9 @@ const BlogPost = () => {
           <RecentBlogs currentBlogId={blog.id} />
         </div>
       </div>
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
 
       {/* Footer - Same as home page */}
       <footer className="bg-gray-900 dark:bg-gray-950 text-white mt-20">
