@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +38,7 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
     setLoading(blogId);
     try {
       const { data, error } = await supabase.functions.invoke('blog-operations', {
-        body: { action: 'delete', blogId }
+        body: { action: 'delete', id: blogId }
       });
 
       if (error) throw error;
