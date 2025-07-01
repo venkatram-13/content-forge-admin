@@ -153,19 +153,19 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
   const renderMarkdownPreview = (markdown: string) => {
     // Improved markdown to HTML conversion for preview
     return markdown
-      .replace(/^#### (.*$)/gim, '<h4 class="text-base font-semibold mt-3 mb-2 text-gray-800">$1</h4>')
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-800">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 border-b border-gray-200 pb-2 text-gray-900">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-gray-900">$1</h1>')
-      .replace(/^\- (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 list-disc">$1</li>')
-      .replace(/^\* (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 list-disc">$1</li>')
-      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 list-decimal">$1</li>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="italic text-gray-800">$1</em>')
+      .replace(/^#### (.*$)/gim, '<h4 class="text-base font-semibold mt-3 mb-2 text-gray-800 dark:text-gray-200">$1</h4>')
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-800 dark:text-gray-200">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 border-b border-gray-200 dark:border-gray-600 pb-2 text-gray-900 dark:text-gray-100">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-gray-900 dark:text-gray-100">$1</h1>')
+      .replace(/^\- (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 dark:text-gray-300 list-disc">$1</li>')
+      .replace(/^\* (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 dark:text-gray-300 list-disc">$1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 dark:text-gray-300 list-decimal">$1</li>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900 dark:text-gray-100">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic text-gray-800 dark:text-gray-200">$1</em>')
       .replace(/\n\n/g, '<br><br>')
       .replace(/\n/g, '<br>')
       .split('<br><br>')
-      .map(paragraph => paragraph.trim() ? `<p class="mb-4 text-gray-700 leading-relaxed">${paragraph}</p>` : '')
+      .map(paragraph => paragraph.trim() ? `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${paragraph}</p>` : '')
       .join('');
   };
 
@@ -174,9 +174,9 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
   if (showPreview && rewrittenContent) {
     return (
       <div className="space-y-6">
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+        <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-0 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-xl md:text-2xl">
+            <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900 dark:text-white">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-green-500 to-teal-600 rounded-xl flex items-center justify-center">
                 <Eye className="w-4 h-4 md:w-5 md:h-5 text-white" />
               </div>
@@ -185,8 +185,8 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <Label className="text-lg font-semibold text-gray-800">Generated Title:</Label>
-              <h2 className="text-2xl font-bold text-gray-900 mt-2">{rewrittenTitle}</h2>
+              <Label className="text-lg font-semibold text-gray-800 dark:text-gray-200">Generated Title:</Label>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">{rewrittenTitle}</h2>
             </div>
             
             {/* Preview Toggle Tabs */}
@@ -203,7 +203,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
               </TabsList>
               
               <TabsContent value="preview" className="mt-4">
-                <div className="p-6 bg-gray-50 rounded-lg max-h-96 overflow-y-auto border">
+                <div className="p-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600">
                   <div 
                     className="prose prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: renderMarkdownPreview(rewrittenContent) }}
@@ -212,13 +212,13 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
               </TabsContent>
               
               <TabsContent value="markdown" className="mt-4">
-                <div className="p-4 bg-gray-50 rounded-lg max-h-96 overflow-y-auto border font-mono text-sm">
-                  <pre className="whitespace-pre-wrap text-gray-800">{rewrittenContent}</pre>
+                <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600 font-mono text-sm">
+                  <pre className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">{rewrittenContent}</pre>
                 </div>
               </TabsContent>
             </Tabs>
             
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               Word count: {rewrittenContent.split(/\s+/).length} words
             </p>
 
@@ -226,7 +226,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
               <Button 
                 onClick={() => setShowPreview(false)}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
               >
                 <RotateCcw className="w-4 h-4" />
                 Back to Edit
@@ -248,15 +248,15 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+      <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-xl md:text-2xl">
+          <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900 dark:text-white">
             <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
               <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
             Step 1: Content Input & AI Enhancement
           </CardTitle>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Provide content to enhance with AI, or skip to manually create your blog post
           </p>
         </CardHeader>
@@ -275,16 +275,16 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
             
             <TabsContent value="url" className="space-y-4">
               <div>
-                <Label htmlFor="url" className="text-sm md:text-base font-medium">Article URL</Label>
+                <Label htmlFor="url" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Article URL</Label>
                 <Input
                   id="url"
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://example.com/job-posting"
-                  className="mt-2 h-10 md:h-12"
+                  className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Provide a URL to a job posting or article that will be enhanced by AI
                 </p>
               </div>
@@ -292,16 +292,16 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
             
             <TabsContent value="text" className="space-y-4">
               <div>
-                <Label htmlFor="rawText" className="text-sm md:text-base font-medium">Raw Text Content</Label>
+                <Label htmlFor="rawText" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Raw Text Content</Label>
                 <Textarea
                   id="rawText"
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
                   placeholder="Paste your job posting content, bullet points, or job description here..."
                   rows={8}
-                  className="mt-2"
+                  className="mt-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Provide job details, requirements, or any content that should be enhanced into a professional blog post
                 </p>
               </div>
@@ -309,9 +309,9 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
           </Tabs>
 
           {!canProceed && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-              <AlertCircle className="w-4 h-4 text-blue-600" />
-              <p className="text-sm text-blue-700">
+            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg mb-4">
+              <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <p className="text-sm text-blue-700 dark:text-blue-300">
                 Provide {inputType === 'url' ? 'a URL' : 'text content'} to enhance with AI, or skip to create manually
               </p>
             </div>
@@ -339,7 +339,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
             <Button 
               onClick={handleSkip}
               variant="outline"
-              className="flex-1 h-12 md:h-14 text-sm md:text-lg border-2 hover:bg-gray-50"
+              className="flex-1 h-12 md:h-14 text-sm md:text-lg border-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
             >
               <ArrowRight className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               Skip & Create Manually
