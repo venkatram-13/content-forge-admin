@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Plus, Settings, LogOut, Edit, FileText, BarChart3, Users, Globe, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { TwoPageBlogCreation } from './TwoPageBlogCreation';
 import { AdminSettings } from './AdminSettings';
 import { BlogManager } from './BlogManager';
 import { BlogAnalytics } from './BlogAnalytics';
+import { ThemeToggle } from './ThemeToggle';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -71,9 +73,9 @@ export const AdminDashboard = () => {
   const draftCount = blogs.filter(blog => blog.status === 'draft').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg border-b border-white/20 dark:border-slate-700/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -84,26 +86,29 @@ export const AdminDashboard = () => {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   AI Blog Admin
                 </h1>
-                <p className="text-gray-600">Welcome back, {user?.email}</p>
+                <p className="text-gray-600 dark:text-gray-300">Welcome back, {user?.email}</p>
               </div>
             </div>
-            <Button onClick={logout} variant="outline" className="flex items-center gap-2 hover:bg-red-50 hover:border-red-200">
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Button onClick={logout} variant="outline" className="flex items-center gap-2 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:border-red-700">
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Navigation Tabs */}
-        <div className="flex gap-2 mb-8 bg-white/80 backdrop-blur-sm p-2 rounded-2xl shadow-lg border border-white/20">
+        <div className="flex gap-2 mb-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm p-2 rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/20">
           <button
             onClick={() => setActiveTab('overview')}
             className={`px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 font-medium ${
               activeTab === 'overview' 
                 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
             }`}
           >
             <BarChart3 className="w-5 h-5" />
@@ -114,7 +119,7 @@ export const AdminDashboard = () => {
             className={`px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 font-medium ${
               activeTab === 'create' 
                 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
             }`}
           >
             <Plus className="w-5 h-5" />
@@ -125,7 +130,7 @@ export const AdminDashboard = () => {
             className={`px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 font-medium ${
               activeTab === 'manage' 
                 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
             }`}
           >
             <Edit className="w-5 h-5" />
@@ -136,7 +141,7 @@ export const AdminDashboard = () => {
             className={`px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 font-medium ${
               activeTab === 'settings' 
                 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
             }`}
           >
             <Settings className="w-5 h-5" />
@@ -198,9 +203,9 @@ export const AdminDashboard = () => {
             </div>
 
             {/* Analytics Section */}
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
+                <CardTitle className="flex items-center gap-2 text-xl text-gray-900 dark:text-white">
                   <BarChart3 className="w-5 h-5 text-purple-600" />
                   Website Analytics
                 </CardTitle>
@@ -210,9 +215,9 @@ export const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+            <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
+                <CardTitle className="flex items-center gap-2 text-xl text-gray-900 dark:text-white">
                   <Sparkles className="w-5 h-5 text-purple-600" />
                   Quick Actions
                 </CardTitle>
@@ -229,7 +234,7 @@ export const AdminDashboard = () => {
                   <Button 
                     onClick={() => setActiveTab('manage')} 
                     variant="outline" 
-                    className="h-16 flex items-center gap-3 text-lg border-2 hover:bg-blue-50"
+                    className="h-16 flex items-center gap-3 text-lg border-2 hover:bg-blue-50 dark:hover:bg-blue-950/20"
                   >
                     <Edit className="w-5 h-5" />
                     Manage Blogs
@@ -237,7 +242,7 @@ export const AdminDashboard = () => {
                   <Button 
                     onClick={() => setActiveTab('settings')} 
                     variant="outline" 
-                    className="h-16 flex items-center gap-3 text-lg border-2 hover:bg-purple-50"
+                    className="h-16 flex items-center gap-3 text-lg border-2 hover:bg-purple-50 dark:hover:bg-purple-950/20"
                   >
                     <Settings className="w-5 h-5" />
                     Settings

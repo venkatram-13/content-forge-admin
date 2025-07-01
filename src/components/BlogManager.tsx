@@ -57,14 +57,14 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
     }
   };
 
-  const handleStatusChange = async (blogId: string, newStatus: 'published' | 'draft') => {
+  const handlePublish = async (blogId: string) => {
     setLoading(blogId);
     try {
       const { data, error } = await supabase.functions.invoke('blog-operations', {
         body: { 
           action: 'update', 
           blogId,
-          updates: { status: newStatus }
+          updates: { status: 'published' }
         }
       });
 
@@ -72,14 +72,14 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
 
       if (data.success) {
         const updatedBlogs = blogs.map(blog => 
-          blog.id === blogId ? { ...blog, status: newStatus } : blog
+          blog.id === blogId ? { ...blog, status: 'published' as const } : blog
         );
         onBlogsUpdated(updatedBlogs);
-        toast.success(`Blog ${newStatus === 'published' ? 'published' : 'unpublished'} successfully!`);
+        toast.success('Blog published successfully!');
       }
     } catch (error) {
-      console.error('Error updating blog status:', error);
-      toast.error('Failed to update blog status');
+      console.error('Error publishing blog:', error);
+      toast.error('Failed to publish blog');
     } finally {
       setLoading(null);
     }
@@ -114,9 +114,9 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
 
   if (blogs.length === 0) {
     return (
-      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+      <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl">
         <CardContent className="p-12 text-center">
-          <div className="text-gray-500 mb-4">
+          <div className="text-gray-500 dark:text-gray-400 mb-4">
             <Edit className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <h3 className="text-xl font-semibold mb-2">No blogs created yet</h3>
             <p>Create your first blog to get started!</p>
@@ -129,26 +129,26 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Manage Blogs</h2>
-        <div className="text-sm text-gray-500">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Blogs</h2>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           {blogs.length} blog{blogs.length !== 1 ? 's' : ''} total
         </div>
       </div>
 
       <div className="grid gap-6">
         {blogs.map((blog) => (
-          <Card key={blog.id} className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card key={blog.id} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <CardTitle className="text-lg">{blog.title}</CardTitle>
+                    <CardTitle className="text-lg text-gray-900 dark:text-white">{blog.title}</CardTitle>
                     <Badge variant={blog.status === 'published' ? 'default' : 'secondary'}>
                       {blog.status}
                     </Badge>
                   </div>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{blog.excerpt}</p>
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{blog.excerpt}</p>
+                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                     <span>By {blog.author}</span>
                     <span>{formatDate(blog.created_at)}</span>
                     <span className="flex items-center gap-1">
@@ -202,14 +202,17 @@ export const BlogManager = ({ blogs, onBlogsUpdated }: BlogManagerProps) => {
                   </Button>
                 )}
                 
-                <Button
-                  variant={blog.status === 'published' ? 'secondary' : 'default'}
-                  size="sm"
-                  onClick={() => handleStatusChange(blog.id, blog.status === 'published' ? 'draft' : 'published')}
-                  disabled={loading === blog.id}
-                >
-                  {blog.status === 'published' ? 'Unpublish' : 'Publish'}
-                </Button>
+                {blog.status === 'draft' && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handlePublish(blog.id)}
+                    disabled={loading === blog.id}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Publish
+                  </Button>
+                )}
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
