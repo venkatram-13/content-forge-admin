@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -74,7 +75,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string;
-        insertAtCursor(`\n\n![${file.name}](${imageUrl})\n\n`);
+        insertAtCursor(`<img src="${imageUrl}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 16px 0;" />`);
       };
       reader.readAsDataURL(file);
       
@@ -97,32 +98,32 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     }
   };
 
-  const insertAtCursor = (textToInsert: string) => {
+  const insertAtCursor = (htmlToInsert: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const newContent = content.substring(0, start) + textToInsert + content.substring(end);
+    const newContent = content.substring(0, start) + htmlToInsert + content.substring(end);
     
     setContent(newContent);
     
     // Set cursor position after inserted text
     setTimeout(() => {
       textarea.focus();
-      const newPosition = start + textToInsert.length;
+      const newPosition = start + htmlToInsert.length;
       textarea.setSelectionRange(newPosition, newPosition);
     }, 100);
   };
 
-  const wrapSelectedText = (prefix: string, suffix: string = '') => {
+  const wrapSelectedText = (openTag: string, closeTag: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
-    const wrappedText = prefix + (selectedText || 'text') + (suffix || prefix);
+    const wrappedText = openTag + (selectedText || 'text') + closeTag;
     
     const newContent = content.substring(0, start) + wrappedText + content.substring(end);
     setContent(newContent);
@@ -130,9 +131,9 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     setTimeout(() => {
       textarea.focus();
       if (selectedText) {
-        textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
+        textarea.setSelectionRange(start + openTag.length, start + openTag.length + selectedText.length);
       } else {
-        textarea.setSelectionRange(start + prefix.length, start + prefix.length + 4); // Select "text"
+        textarea.setSelectionRange(start + openTag.length, start + openTag.length + 4); // Select "text"
       }
     }, 100);
   };
@@ -145,55 +146,70 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
     
-    let textToInsert = '';
+    let htmlToInsert = '';
     
     switch (format) {
       case 'bold':
-        wrapSelectedText('**', '**');
+        wrapSelectedText('<strong>', '</strong>');
         return;
       case 'italic':
-        wrapSelectedText('*', '*');
+        wrapSelectedText('<em>', '</em>');
         return;
       case 'underline':
         wrapSelectedText('<u>', '</u>');
         return;
       case 'h1':
-        textToInsert = `\n# ${selectedText || 'Heading 1'}\n`;
+        htmlToInsert = `<h1 style="font-size: 2rem; font-weight: bold; margin: 32px 0 16px; color: #1f2937;">${selectedText || 'Heading 1'}</h1>`;
         break;
       case 'h2':
-        textToInsert = `\n## ${selectedText || 'Heading 2'}\n`;
+        htmlToInsert = `<h2 style="font-size: 1.75rem; font-weight: bold; margin: 24px 0 12px; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">${selectedText || 'Heading 2'}</h2>`;
         break;
       case 'h3':
-        textToInsert = `\n### ${selectedText || 'Heading 3'}\n`;
+        htmlToInsert = `<h3 style="font-size: 1.5rem; font-weight: 600; margin: 20px 0 10px; color: #374151;">${selectedText || 'Heading 3'}</h3>`;
         break;
       case 'h4':
-        textToInsert = `\n#### ${selectedText || 'Heading 4'}\n`;
+        htmlToInsert = `<h4 style="font-size: 1.25rem; font-weight: 600; margin: 16px 0 8px; color: #4b5563;">${selectedText || 'Heading 4'}</h4>`;
         break;
       case 'bullet-list':
-        textToInsert = `\n- ${selectedText || 'List item'}\n- \n- \n`;
+        htmlToInsert = `<ul style="margin: 16px 0; padding-left: 24px; color: #374151;">
+  <li style="margin: 8px 0;">${selectedText || 'List item'}</li>
+  <li style="margin: 8px 0;">Second item</li>
+  <li style="margin: 8px 0;">Third item</li>
+</ul>`;
         break;
       case 'numbered-list':
-        textToInsert = `\n1. ${selectedText || 'First item'}\n2. \n3. \n`;
+        htmlToInsert = `<ol style="margin: 16px 0; padding-left: 24px; color: #374151;">
+  <li style="margin: 8px 0;">${selectedText || 'First item'}</li>
+  <li style="margin: 8px 0;">Second item</li>
+  <li style="margin: 8px 0;">Third item</li>
+</ol>`;
         break;
       case 'link':
         const linkText = selectedText || 'link text';
         const url = prompt('Enter the URL:') || 'https://example.com';
-        textToInsert = `[${linkText}](${url})`;
+        htmlToInsert = `<a href="${url}" style="color: #2563eb; text-decoration: underline;" target="_blank">${linkText}</a>`;
         break;
       case 'cta-button':
         const buttonText = selectedText || 'Apply Now';
         const buttonUrl = prompt('Enter the URL for this button:') || 'https://example.com';
-        textToInsert = `\n\n<div style="text-align: center; margin: 24px 0;"><a href="${buttonUrl}" target="_blank" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; text-decoration: none; display: inline-block; hover:transform: translateY(-2px);">${buttonText}</a></div>\n\n`;
+        htmlToInsert = `<div style="text-align: center; margin: 24px 0;">
+  <a href="${buttonUrl}" target="_blank" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; text-decoration: none; display: inline-block; hover:transform: translateY(-2px);">${buttonText}</a>
+</div>`;
+        break;
+      case 'paragraph':
+        htmlToInsert = `<p style="margin: 16px 0; line-height: 1.7; color: #374151;">${selectedText || 'Your paragraph text here'}</p>`;
         break;
     }
     
-    if (textToInsert) {
-      insertAtCursor(textToInsert);
+    if (htmlToInsert) {
+      insertAtCursor(htmlToInsert);
     }
   };
 
   const validateContent = () => {
-    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+    // Count words by stripping HTML tags and counting text content
+    const textContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const wordCount = textContent.split(' ').filter(word => word.length > 0).length;
     
     if (!title.trim()) {
       toast({
@@ -283,18 +299,20 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     setIsPublishing(false);
   };
 
-  const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+  // Count words by stripping HTML tags
+  const textContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const wordCount = textContent.split(' ').filter(word => word.length > 0).length;
 
   if (showPreview) {
     return (
       <div className="space-y-6">
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl dark:bg-slate-800/90">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-xl md:text-2xl">
+            <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900 dark:text-white">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <Eye className="w-4 h-4" />
               </div>
-              Final Preview
+              HTML Content Preview
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -302,28 +320,26 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               {featuredImage && (
                 <img src={featuredImage} alt={title} className="w-full h-64 object-cover rounded-lg" />
               )}
-              <h1 className="text-3xl font-bold">{title}</h1>
-              <p className="text-gray-600">By {author} • {wordCount} words</p>
-              <div 
-                className="prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ 
-                  __html: content
-                    .replace(/\n/g, '<br />')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-                    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-                    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-                    .replace(/^#### (.*$)/gm, '<h4>$1</h4>')
-                }}
-              />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
+              <p className="text-gray-600 dark:text-gray-400">By {author} • {wordCount} words</p>
+              
+              <div className="p-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600">
+                <div 
+                  className="prose prose-sm max-w-none dark:prose-invert"
+                  dangerouslySetInnerHTML={{ __html: content }}
+                />
+              </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              Word count: {wordCount} words
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
               <Button 
                 onClick={() => setShowPreview(false)}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Edit
@@ -333,7 +349,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 onClick={() => publishBlog('draft')}
                 variant="outline"
                 disabled={isPublishing}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
               >
                 <Save className="w-4 h-4" />
                 Save as Draft
@@ -365,47 +381,47 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl dark:bg-slate-800/90">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-lg md:text-xl">
+          <CardTitle className="flex items-center gap-3 text-lg md:text-xl text-slate-900 dark:text-white">
             <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
-            Step 2: Blog Setup & Rich Text Editor
+            Step 2: Blog Setup & HTML Editor
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 md:space-y-6">
           {/* Blog Metadata */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
-              <Label htmlFor="title" className="text-sm md:text-base font-medium">Blog Title *</Label>
+              <Label htmlFor="title" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Blog Title *</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter an engaging title..."
-                className="mt-2 h-10 md:h-12"
+                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
               />
             </div>
             
             <div>
-              <Label htmlFor="author" className="text-sm md:text-base font-medium">Author</Label>
+              <Label htmlFor="author" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Author</Label>
               <Input
                 id="author"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Author name..."
-                className="mt-2 h-10 md:h-12"
+                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <div>
-              <Label htmlFor="category" className="text-sm md:text-base font-medium flex items-center gap-2">
+              <Label htmlFor="category" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 <Briefcase className="w-3 h-3 md:w-4 md:h-4" />
                 Category *
               </Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="mt-2 h-10 md:h-12">
+                <SelectTrigger className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="Select category..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -420,7 +436,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             </div>
 
             <div>
-              <Label htmlFor="featuredImage" className="text-sm md:text-base font-medium flex items-center gap-2">
+              <Label htmlFor="featuredImage" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 <ImageIcon className="w-3 h-3 md:w-4 md:h-4" />
                 Featured Image URL *
               </Label>
@@ -429,12 +445,12 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 value={featuredImage}
                 onChange={(e) => setFeaturedImage(e.target.value)}
                 placeholder="https://example.com/featured-image.jpg"
-                className="mt-2 h-10 md:h-12"
+                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
               />
             </div>
 
             <div>
-              <Label htmlFor="applicationLink" className="text-sm md:text-base font-medium flex items-center gap-2">
+              <Label htmlFor="applicationLink" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 <Link className="w-3 h-3 md:w-4 md:h-4" />
                 Application Link
               </Label>
@@ -443,40 +459,41 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                 value={applicationLink}
                 onChange={(e) => setApplicationLink(e.target.value)}
                 placeholder="https://example.com/apply"
-                className="mt-2 h-10 md:h-12"
+                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
 
-          {/* Featured Image Preview (without full image preview) */}
+          {/* Featured Image Preview */}
           {featuredImage && (
             <div className="mt-2">
-              <p className="text-sm text-gray-600">Featured Image Preview:</p>
-              <div className="w-full h-32 bg-gray-100 rounded border flex items-center justify-center mt-1">
-                <p className="text-sm text-gray-500">Image URL: {featuredImage.substring(0, 50)}...</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Featured Image Preview:</p>
+              <div className="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded border flex items-center justify-center mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Image URL: {featuredImage.substring(0, 50)}...</p>
               </div>
             </div>
           )}
 
-          {/* Rich Text Editor */}
+          {/* HTML Editor */}
           <div>
-            <Label htmlFor="content" className="text-sm md:text-base font-medium">
-              Rich Text Editor ({wordCount} words - Min: 1000) 
+            <Label htmlFor="content" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">
+              HTML Editor ({wordCount} words - Min: 1000) 
               <span className={wordCount < 1000 ? "text-red-500 ml-2" : "text-green-500 ml-2"}>
                 {wordCount < 1000 ? `Need ${1000 - wordCount} more words` : "✓ Word count met"}
               </span>
             </Label>
             
-            {/* Enhanced Formatting Toolbar */}
-            <div className="flex flex-wrap gap-2 mt-2 mb-2 p-3 bg-gray-50 rounded-lg border">
+            {/* HTML Formatting Toolbar */}
+            <div className="flex flex-wrap gap-2 mt-2 mb-2 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-600">
               {/* Text Formatting */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300">
+              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
                 <Button 
                   size="sm" 
                   variant="outline" 
                   onClick={() => insertFormatting('bold')} 
                   title="Bold"
                   type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
                 >
                   <Bold className="w-3 h-3" />
                 </Button>
@@ -486,6 +503,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   onClick={() => insertFormatting('italic')} 
                   title="Italic"
                   type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
                 >
                   <Italic className="w-3 h-3" />
                 </Button>
@@ -495,35 +513,47 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   onClick={() => insertFormatting('underline')} 
                   title="Underline"
                   type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
                 >
                   <Type className="w-3 h-3" />
                 </Button>
               </div>
 
               {/* Headings */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300">
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h1')} title="Heading 1" type="button">
+              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h1')} title="Heading 1" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
                   H1
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h2')} title="Heading 2" type="button">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h2')} title="Heading 2" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
                   H2
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h3')} title="Heading 3" type="button">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h3')} title="Heading 3" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
                   H3
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h4')} title="Heading 4" type="button">
+                <Button size="sm" variant="outline" onClick={() => insertFormatting('h4')} title="Heading 4" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
                   H4
                 </Button>
               </div>
 
-              {/* Lists */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300">
+              {/* Structure */}
+              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => insertFormatting('paragraph')} 
+                  title="Paragraph"
+                  type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
+                >
+                  P
+                </Button>
                 <Button 
                   size="sm" 
                   variant="outline" 
                   onClick={() => insertFormatting('bullet-list')} 
                   title="Bullet List"
                   type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
                 >
                   <List className="w-3 h-3" />
                 </Button>
@@ -533,19 +563,21 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   onClick={() => insertFormatting('numbered-list')} 
                   title="Numbered List"
                   type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
                 >
                   1.
                 </Button>
               </div>
 
               {/* Links & Media */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300">
+              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
                 <Button 
                   size="sm" 
                   variant="outline" 
                   onClick={() => insertFormatting('link')} 
                   title="Insert Link"
                   type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
                 >
                   <Link className="w-3 h-3" />
                 </Button>
@@ -556,6 +588,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   disabled={uploadingImage}
                   title="Upload Image"
                   type="button"
+                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
                 >
                   {uploadingImage ? (
                     <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -578,7 +611,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   size="sm" 
                   variant="outline" 
                   onClick={() => insertFormatting('cta-button')} 
-                  className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
+                  className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 border-blue-200 dark:border-blue-700 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-800/40 dark:hover:to-purple-800/40 text-blue-700 dark:text-blue-300"
                   title="Insert CTA Button"
                   type="button"
                 >
@@ -593,13 +626,13 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               id="content-editor"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Edit your blog content here... Use the toolbar above to format your text, add images, and insert CTA buttons!"
+              placeholder="Edit your blog content here using HTML... Use the toolbar above to insert formatted HTML elements!"
               rows={24}
-              className="mt-2 font-mono text-sm resize-none"
+              className="mt-2 font-mono text-sm resize-none bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
             />
-            <p className="text-xs text-gray-500 mt-2">
-              💡 <strong>Pro Tips:</strong> Select text before applying formatting (bold, italic, etc.). 
-              Upload images directly using the 📷 button. Create CTA buttons with custom URLs. 
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              💡 <strong>Pro Tips:</strong> This is an HTML editor. Select text before applying formatting to wrap it in HTML tags. 
+              Upload images directly using the 📷 button. Create styled CTA buttons with custom URLs. 
               Minimum 1000 words required for publication.
             </p>
           </div>
@@ -608,7 +641,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             <Button 
               onClick={onBack}
               variant="outline"
-              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6"
+              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
               type="button"
             >
               <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
@@ -618,7 +651,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             <Button 
               onClick={() => setShowPreview(true)}
               variant="outline"
-              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6"
+              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
               type="button"
             >
               <Eye className="w-3 h-3 md:w-4 md:h-4" />
@@ -629,7 +662,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               onClick={() => publishBlog('draft')}
               variant="outline"
               disabled={isPublishing}
-              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 border-2"
+              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 border-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
               type="button"
             >
               <Save className="w-3 h-3 md:w-4 md:h-4" />

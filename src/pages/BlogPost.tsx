@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
@@ -8,7 +9,6 @@ import { RecentBlogs } from '@/components/RecentBlogs';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { supabase } from '@/integrations/supabase/client';
-import { generateTableOfContents, renderMarkdownWithTOC } from '@/utils/markdownRenderer';
 
 interface Blog {
   id: string;
@@ -33,13 +33,40 @@ const AdPlaceholder = ({ id, className = "", label }: { id: string; className?: 
   </div>
 );
 
+const generateTableOfContentsFromHTML = (htmlContent: string): TOCItem[] => {
+  const toc: TOCItem[] = [];
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlContent;
+  
+  const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  
+  headings.forEach((heading) => {
+    const level = parseInt(heading.tagName.charAt(1));
+    if (level >= 2 && level <= 4) { // Only include h2, h3, h4 in TOC
+      const text = heading.textContent?.trim() || '';
+      const id = text.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      // Add ID to the heading for anchor linking
+      heading.id = id;
+      
+      toc.push({ id, text, level });
+    }
+  });
+  
+  return toc;
+};
+
 const BlogPost = () => {
   const { slug } = useParams();
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toc, setToc] = useState<TOCItem[]>([]);
-  const [renderedContent, setRenderedContent] = useState('');
+  const [processedContent, setProcessedContent] = useState('');
 
   useEffect(() => {
     fetchBlog();
@@ -47,13 +74,26 @@ const BlogPost = () => {
 
   useEffect(() => {
     if (blog?.content) {
-      const tocItems = generateTableOfContents(blog.content);
+      // Generate TOC from HTML content
+      const tocItems = generateTableOfContentsFromHTML(blog.content);
       setToc(tocItems);
       
-      // Handle async markdown rendering
-      renderMarkdownWithTOC(blog.content).then(htmlContent => {
-        setRenderedContent(htmlContent);
+      // Process HTML content to add IDs to headings
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = blog.content;
+      
+      const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headings.forEach((heading) => {
+        const text = heading.textContent?.trim() || '';
+        const id = text.toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '');
+        heading.id = id;
       });
+      
+      setProcessedContent(tempDiv.innerHTML);
     }
   }, [blog?.content]);
 
@@ -229,7 +269,7 @@ const BlogPost = () => {
             {/* Table of Contents */}
             <TableOfContents items={toc} />
 
-            {/* Article Content with Rendered Markdown */}
+            {/* Article Content with HTML */}
             <div className="prose prose-sm md:prose-lg max-w-none dark:prose-invert">
               {/* In-Content Ad after TOC */}
               <AdPlaceholder 
@@ -239,8 +279,8 @@ const BlogPost = () => {
               />
               
               <div 
-                className="markdown-content"
-                dangerouslySetInnerHTML={{ __html: renderedContent }}
+                className="html-content"
+                dangerouslySetInnerHTML={{ __html: processedContent }}
               />
             </div>
 
@@ -361,105 +401,121 @@ const BlogPost = () => {
         </div>
       </footer>
 
-      {/* CSS for markdown content */}
+      {/* CSS for HTML content styling */}
       <style>{`
-        .markdown-content h2 {
-          font-size: 1.875rem;
-          font-weight: 700;
-          margin-top: 2rem;
-          margin-bottom: 1rem;
+        .html-content {
+          line-height: 1.7;
+        }
+        .html-content h1 {
+          font-size: 2rem;
+          font-weight: bold;
+          margin: 32px 0 16px;
+          color: #1f2937;
+        }
+        .dark .html-content h1 {
+          color: #f9fafb;
+        }
+        .html-content h2 {
+          font-size: 1.75rem;
+          font-weight: bold;
+          margin: 24px 0 12px;
           color: #1f2937;
           border-bottom: 2px solid #e5e7eb;
-          padding-bottom: 0.5rem;
+          padding-bottom: 8px;
         }
-        .dark .markdown-content h2 {
+        .dark .html-content h2 {
           color: #f9fafb;
           border-bottom-color: #374151;
         }
-        .markdown-content h3 {
+        .html-content h3 {
           font-size: 1.5rem;
           font-weight: 600;
-          margin-top: 1.5rem;
-          margin-bottom: 0.75rem;
+          margin: 20px 0 10px;
           color: #374151;
         }
-        .dark .markdown-content h3 {
+        .dark .html-content h3 {
           color: #e5e7eb;
         }
-        .markdown-content h4 {
+        .html-content h4 {
           font-size: 1.25rem;
           font-weight: 600;
-          margin-top: 1.25rem;
-          margin-bottom: 0.5rem;
+          margin: 16px 0 8px;
           color: #4b5563;
         }
-        .dark .markdown-content h4 {
+        .dark .html-content h4 {
           color: #d1d5db;
         }
-        .markdown-content p {
-          margin: 1rem 0;
+        .html-content p {
+          margin: 16px 0;
           line-height: 1.7;
           color: #374151;
         }
-        .dark .markdown-content p {
+        .dark .html-content p {
           color: #d1d5db;
         }
-        .markdown-content ul, .markdown-content ol {
-          margin: 1rem 0;
-          padding-left: 1.5rem;
+        .html-content ul, .html-content ol {
+          margin: 16px 0;
+          padding-left: 24px;
           color: #374151;
         }
-        .dark .markdown-content ul, .dark .markdown-content ol {
+        .dark .html-content ul, .dark .html-content ol {
           color: #d1d5db;
         }
-        .markdown-content li {
-          margin: 0.5rem 0;
+        .html-content li {
+          margin: 8px 0;
         }
-        .markdown-content a {
+        .html-content a {
           color: #2563eb;
           text-decoration: underline;
         }
-        .dark .markdown-content a {
+        .dark .html-content a {
           color: #60a5fa;
         }
-        .markdown-content a:hover {
+        .html-content a:hover {
           color: #1d4ed8;
         }
-        .dark .markdown-content a:hover {
+        .dark .html-content a:hover {
           color: #93c5fd;
         }
-        .markdown-content strong {
+        .html-content strong {
           font-weight: 700;
-        }
-        .markdown-content em {
-          font-style: italic;
-        }
-        .markdown-content code {
-          background-color: #f3f4f6;
-          padding: 0.125rem 0.25rem;
-          border-radius: 0.25rem;
-          font-family: ui-monospace, monospace;
           color: #1f2937;
         }
-        .dark .markdown-content code {
-          background-color: #374151;
+        .dark .html-content strong {
           color: #f9fafb;
         }
-        .markdown-content pre {
-          background-color: #f3f4f6;
-          padding: 1rem;
-          border-radius: 0.5rem;
-          overflow-x: auto;
-          margin: 1rem 0;
+        .html-content em {
+          font-style: italic;
         }
-        .dark .markdown-content pre {
-          background-color: #374151;
+        .html-content u {
+          text-decoration: underline;
         }
-        .markdown-content img {
+        .html-content img {
           max-width: 100%;
           height: auto;
-          border-radius: 0.5rem;
-          margin: 1rem 0;
+          border-radius: 8px;
+          margin: 16px 0;
+        }
+        .html-content div[style*="text-align: center"] {
+          text-align: center;
+          margin: 24px 0;
+        }
+        .html-content div[style*="text-align: center"] a {
+          display: inline-block;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 16px 32px;
+          border: none;
+          border-radius: 8px;
+          font-weight: bold;
+          font-size: 16px;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          transition: all 0.3s ease;
+          text-decoration: none;
+        }
+        .html-content div[style*="text-align: center"] a:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
       `}</style>
     </div>
