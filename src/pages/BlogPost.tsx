@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
@@ -206,7 +205,7 @@ const BlogPost = () => {
               <img
                 src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop"}
                 alt={blog.title}
-                className="w-full h-64 md:h-96 object-cover"
+                className="w-full h-48 md:h-64 lg:h-80 object-cover"
               />
             </div>
 
@@ -363,25 +362,27 @@ const BlogPost = () => {
         </div>
       </footer>
 
-      {/* Dark mode compatible CSS for HTML content styling */}
+      {/* Enhanced dark mode compatible CSS for HTML content styling */}
       <style>{`
         .html-content {
           line-height: 1.7;
         }
-        .dark .html-content h1 {
+        .dark .html-content h1,
+        .dark .html-content h2,
+        .dark .html-content h3,
+        .dark .html-content h4,
+        .dark .html-content p,
+        .dark .html-content li,
+        .dark .html-content strong {
           color: #f9fafb !important;
         }
         .dark .html-content h2 {
-          color: #f9fafb !important;
           border-bottom-color: #374151 !important;
         }
         .dark .html-content h3 {
           color: #e5e7eb !important;
         }
         .dark .html-content h4 {
-          color: #d1d5db !important;
-        }
-        .dark .html-content p {
           color: #d1d5db !important;
         }
         .dark .html-content ul, .dark .html-content ol {
@@ -392,9 +393,6 @@ const BlogPost = () => {
         }
         .dark .html-content a:hover {
           color: #93c5fd !important;
-        }
-        .dark .html-content strong {
-          color: #f9fafb !important;
         }
       `}</style>
     </div>

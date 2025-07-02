@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye, Plus, Type, ArrowLeft, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { applyStylesToHTML } from '@/utils/htmlRenderer';
 
 interface BlogSetupPageProps {
   initialContent: string;
@@ -205,98 +206,6 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
     }
   };
 
-  // Function to apply styles to HTML content for preview/display
-  const applyStylesToContent = (htmlContent: string): string => {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
-    
-    // Apply styles to elements
-    const h1Elements = tempDiv.querySelectorAll('h1');
-    h1Elements.forEach(h1 => {
-      h1.style.fontSize = '2rem';
-      h1.style.fontWeight = 'bold';
-      h1.style.margin = '32px 0 16px';
-      h1.style.color = '#1f2937';
-    });
-
-    const h2Elements = tempDiv.querySelectorAll('h2');
-    h2Elements.forEach(h2 => {
-      h2.style.fontSize = '1.75rem';
-      h2.style.fontWeight = 'bold';
-      h2.style.margin = '24px 0 12px';
-      h2.style.color = '#1f2937';
-      h2.style.borderBottom = '2px solid #e5e7eb';
-      h2.style.paddingBottom = '8px';
-    });
-
-    const h3Elements = tempDiv.querySelectorAll('h3');
-    h3Elements.forEach(h3 => {
-      h3.style.fontSize = '1.5rem';
-      h3.style.fontWeight = '600';
-      h3.style.margin = '20px 0 10px';
-      h3.style.color = '#374151';
-    });
-
-    const h4Elements = tempDiv.querySelectorAll('h4');
-    h4Elements.forEach(h4 => {
-      h4.style.fontSize = '1.25rem';
-      h4.style.fontWeight = '600';
-      h4.style.margin = '16px 0 8px';
-      h4.style.color = '#4b5563';
-    });
-
-    const pElements = tempDiv.querySelectorAll('p');
-    pElements.forEach(p => {
-      p.style.margin = '16px 0';
-      p.style.lineHeight = '1.7';
-      p.style.color = '#374151';
-    });
-
-    const ulElements = tempDiv.querySelectorAll('ul');
-    ulElements.forEach(ul => {
-      ul.style.margin = '16px 0';
-      ul.style.paddingLeft = '24px';
-      ul.style.color = '#374151';
-    });
-
-    const olElements = tempDiv.querySelectorAll('ol');
-    olElements.forEach(ol => {
-      ol.style.margin = '16px 0';
-      ol.style.paddingLeft = '24px';
-      ol.style.color = '#374151';
-    });
-
-    const liElements = tempDiv.querySelectorAll('li');
-    liElements.forEach(li => {
-      li.style.margin = '8px 0';
-    });
-
-    const aElements = tempDiv.querySelectorAll('a');
-    aElements.forEach(a => {
-      // Don't style CTA buttons (they already have inline styles)
-      if (!a.style.background) {
-        a.style.color = '#2563eb';
-        a.style.textDecoration = 'underline';
-      }
-    });
-
-    const strongElements = tempDiv.querySelectorAll('strong');
-    strongElements.forEach(strong => {
-      strong.style.fontWeight = '700';
-      strong.style.color = '#1f2937';
-    });
-
-    const imgElements = tempDiv.querySelectorAll('img');
-    imgElements.forEach(img => {
-      img.style.maxWidth = '100%';
-      img.style.height = 'auto';
-      img.style.borderRadius = '8px';
-      img.style.margin = '16px 0';
-    });
-
-    return tempDiv.innerHTML;
-  };
-
   const validateContent = () => {
     // Count words by stripping HTML tags and counting text content
     const textContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -409,7 +318,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           <CardContent>
             <div className="space-y-4">
               {featuredImage && (
-                <img src={featuredImage} alt={title} className="w-full h-64 object-cover rounded-lg" />
+                <img src={featuredImage} alt={title} className="w-full h-48 md:h-64 object-cover rounded-lg" />
               )}
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
               <p className="text-gray-600 dark:text-gray-400">By {author} • {wordCount} words</p>
@@ -417,7 +326,10 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               <div className="p-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600">
                 <div 
                   className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: applyStylesToContent(content) }}
+                  dangerouslySetInnerHTML={{ __html: applyStylesToHTML(content) }}
+                  style={{
+                    color: 'inherit'
+                  }}
                 />
               </div>
             </div>
@@ -466,6 +378,25 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             </div>
           </CardContent>
         </Card>
+
+        {/* Dark mode compatible CSS for preview content */}
+        <style>{`
+          .dark .prose h1,
+          .dark .prose h2,
+          .dark .prose h3,
+          .dark .prose h4,
+          .dark .prose p,
+          .dark .prose li,
+          .dark .prose strong {
+            color: #f9fafb !important;
+          }
+          .dark .prose a {
+            color: #60a5fa !important;
+          }
+          .dark .prose h2 {
+            border-bottom-color: #374151 !important;
+          }
+        `}</style>
       </div>
     );
   }
@@ -558,9 +489,21 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           {/* Featured Image Preview */}
           {featuredImage && (
             <div className="mt-2">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Featured Image Preview:</p>
-              <div className="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded border flex items-center justify-center mt-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Image URL: {featuredImage.substring(0, 50)}...</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Featured Image Preview:</p>
+              <div className="w-full max-w-md">
+                <img 
+                  src={featuredImage} 
+                  alt="Featured image preview" 
+                  className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.nextElementSibling!.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Invalid image URL</p>
+                </div>
               </div>
             </div>
           )}
@@ -767,12 +710,12 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
             >
               {isPublishing ? (
                 <>
-                  <Upload className="w-3 h-3 md:w-4 md:h-4 animate-pulse" />
+                  <Upload className="w-3 h-4 md:w-4 md:h-4 animate-pulse" />
                   Publishing...
                 </>
               ) : (
                 <>
-                  <Upload className="w-3 h-3 md:w-4 md:h-4" />
+                  <Upload className="w-3 h-4 md:w-4 md:h-4" />
                   🚀 Publish Blog
                 </>
               )}
