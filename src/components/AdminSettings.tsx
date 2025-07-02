@@ -4,31 +4,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Key, Save, TestTube, CheckCircle, AlertCircle } from 'lucide-react';
+import { Key, Save, TestTube, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const AdminSettings = () => {
   const [apiKey, setApiKey] = useState('');
+  const [minWordCount, setMinWordCount] = useState('1000');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load saved API key
+    // Load saved API key and min word count
     const savedApiKey = localStorage.getItem('gemini_api_key');
+    const savedMinWordCount = localStorage.getItem('min_word_count');
+    
     if (savedApiKey) {
       setApiKey(savedApiKey);
     }
+    if (savedMinWordCount) {
+      setMinWordCount(savedMinWordCount);
+    }
   }, []);
 
-  const saveApiKey = async () => {
+  const saveSettings = async () => {
     setIsSaving(true);
     
     try {
       localStorage.setItem('gemini_api_key', apiKey);
+      localStorage.setItem('min_word_count', minWordCount);
+      
       toast({
         title: "Settings Saved",
-        description: "Your Gemini API key has been saved successfully.",
+        description: "Your settings have been saved successfully.",
       });
     } catch (error) {
       toast({
@@ -115,8 +123,8 @@ export const AdminSettings = () => {
 
           <div className="flex flex-wrap gap-3">
             <Button 
-              onClick={saveApiKey}
-              disabled={isSaving || !apiKey.trim()}
+              onClick={saveSettings}
+              disabled={isSaving || (!apiKey.trim() && !minWordCount.trim())}
               className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               {isSaving ? (
@@ -127,7 +135,7 @@ export const AdminSettings = () => {
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Save Key
+                  Save Settings
                 </>
               )}
             </Button>
@@ -159,6 +167,35 @@ export const AdminSettings = () => {
                 Remove Key
               </Button>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900 dark:text-white">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+              <FileText className="w-4 h-4 text-white" />
+            </div>
+            Blog Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <Label htmlFor="minWordCount" className="text-slate-700 dark:text-slate-200 font-medium">Minimum Word Count</Label>
+            <Input
+              id="minWordCount"
+              type="number"
+              min="100"
+              max="5000"
+              value={minWordCount}
+              onChange={(e) => setMinWordCount(e.target.value)}
+              placeholder="Enter minimum word count..."
+              className="bg-white/80 dark:bg-slate-700/80 border-blue-200 dark:border-slate-600 focus:border-blue-400 dark:focus:border-blue-400 rounded-xl shadow-lg backdrop-blur-sm"
+            />
+            <p className="text-sm text-slate-600 dark:text-slate-300 bg-blue-50/50 dark:bg-slate-700/30 p-3 rounded-xl">
+              Set the minimum word count required for blog posts. This helps maintain content quality standards.
+            </p>
           </div>
         </CardContent>
       </Card>

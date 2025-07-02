@@ -1,728 +1,409 @@
-import { useState, useRef } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Upload, Image as ImageIcon, Edit, Link, Bold, Italic, List, Eye, Plus, Type, ArrowLeft, Briefcase } from 'lucide-react';
+import { ArrowRight, FileText, Image, Link, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { applyStylesToHTML } from '@/utils/htmlRenderer';
+
+interface BlogSetupData {
+  title: string;
+  excerpt: string;
+  featuredImage: string;
+  applyLink: string;
+  content: string;
+}
 
 interface BlogSetupPageProps {
-  initialContent: string;
-  initialTitle: string;
-  onBlogCreated: (blog: any) => void;
-  onBack: () => void;
+  onNext: (data: BlogSetupData) => void;
+  initialData?: Partial<BlogSetupData>;
 }
 
-interface Blog {
-  id: string;
-  title: string;
-  content: string;
-  excerpt: string;
-  featured_image: string;
-  created_at: string;
-  author: string;
-  slug: string;
-  status: 'published' | 'draft';
-  application_link?: string;
-  category?: string;
-}
-
-export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onBack }: BlogSetupPageProps) => {
-  const [title, setTitle] = useState(initialTitle);
-  const [content, setContent] = useState(initialContent);
-  const [featuredImage, setFeaturedImage] = useState('');
-  const [applicationLink, setApplicationLink] = useState('');
-  const [category, setCategory] = useState('');
-  const [author, setAuthor] = useState('Admin');
-  const [isPublishing, setIsPublishing] = useState(false);
+export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
+  const [formData, setFormData] = useState<BlogSetupData>({
+    title: initialData?.title || '',
+    excerpt: initialData?.excerpt || '',
+    featuredImage: initialData?.featuredImage || '',
+    applyLink: initialData?.applyLink || '',
+    content: initialData?.content || '',
+  });
+  
   const [showPreview, setShowPreview] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [wordCount, setWordCount] = useState(0);
+  const [minWordCount, setMinWordCount] = useState(1000);
+  const [isRewriting, setIsRewriting] = useState(false);
   const { toast } = useToast();
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    // Load minimum word count from settings
+    const savedMinWordCount = localStorage.getItem('min_word_count');
+    if (savedMinWordCount) {
+      setMinWordCount(parseInt(savedMinWordCount));
+    }
+  }, []);
 
-    // Check file type
-    if (!file.type.startsWith('image/')) {
+  useEffect(() => {
+    // Count words in content
+    const text = formData.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const words = text ? text.split(' ').length : 0;
+    setWordCount(words);
+  }, [formData.content]);
+
+  const handleInputChange = (field: keyof BlogSetupData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const applyStylesToHTML = (html: string): string => {
+    return html
+      .replace(/<h1([^>]*)>/g, '<h1$1 style="font-size: 2.5rem; font-weight: bold; margin: 2rem 0 1rem 0; color: #1f2937; line-height: 1.2;">')
+      .replace(/<h2([^>]*)>/g, '<h2$1 style="font-size: 2rem; font-weight: bold; margin: 1.5rem 0 1rem 0; color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem;">')
+      .replace(/<h3([^>]*)>/g, '<h3$1 style="font-size: 1.5rem; font-weight: 600; margin: 1.25rem 0 0.75rem 0; color: #4b5563;">')
+      .replace(/<h4([^>]*)>/g, '<h4$1 style="font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem 0; color: #6b7280;">')
+      .replace(/<p([^>]*)>/g, '<p$1 style="margin: 1rem 0; line-height: 1.6; color: #374151;">')
+      .replace(/<ul([^>]*)>/g, '<ul$1 style="margin: 1rem 0; padding-left: 1.5rem; color: #374151;">')
+      .replace(/<ol([^>]*)>/g, '<ol$1 style="margin: 1rem 0; padding-left: 1.5rem; color: #374151;">')
+      .replace(/<li([^>]*)>/g, '<li$1 style="margin: 0.25rem 0; line-height: 1.5;">')
+      .replace(/<strong([^>]*)>/g, '<strong$1 style="font-weight: 600; color: #1f2937;">')
+      .replace(/<em([^>]*)>/g, '<em$1 style="font-style: italic;">')
+      .replace(/<blockquote([^>]*)>/g, '<blockquote$1 style="border-left: 4px solid #e5e7eb; padding-left: 1rem; margin: 1.5rem 0; font-style: italic; color: #6b7280;">')
+      .replace(/<a([^>]*)>/g, '<a$1 style="color: #2563eb; text-decoration: underline; hover:color: #1d4ed8;">')
+      .replace(/<code([^>]*)>/g, '<code$1 style="background-color: #f3f4f6; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875rem;">');
+  };
+
+  const rewriteWithAI = async () => {
+    const apiKey = localStorage.getItem('gemini_api_key');
+    
+    if (!apiKey) {
       toast({
-        title: "Invalid File Type",
-        description: "Please select an image file.",
+        title: "API Key Required",
+        description: "Please configure your Gemini API key in settings first.",
         variant: "destructive",
       });
       return;
     }
 
-    // Check file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
+    if (!formData.content.trim()) {
       toast({
-        title: "File Too Large",
-        description: "Please select an image smaller than 5MB.",
+        title: "Content Required",
+        description: "Please enter some content to rewrite.",
         variant: "destructive",
       });
       return;
     }
 
-    setUploadingImage(true);
+    setIsRewriting(true);
     
     try {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageUrl = e.target?.result as string;
-        insertAtCursor(`<img src="${imageUrl}" alt="${file.name}" />`);
-      };
-      reader.readAsDataURL(file);
-      
-      toast({
-        title: "Image Added",
-        description: "Image has been inserted into your content.",
+      const response = await fetch('/api/gemini-rewrite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: formData.content,
+          apiKey: apiKey
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to rewrite content');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        handleInputChange('content', data.rewrittenContent);
+        toast({
+          title: "Content Rewritten",
+          description: "Your content has been enhanced with AI.",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to rewrite content');
+      }
     } catch (error) {
-      console.error('Image upload error:', error);
+      console.error('Error rewriting content:', error);
       toast({
-        title: "Upload Failed",
-        description: "There was an error uploading your image.",
+        title: "Rewrite Failed",
+        description: "There was an error rewriting your content. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setUploadingImage(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const insertAtCursor = (htmlToInsert: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const newContent = content.substring(0, start) + htmlToInsert + content.substring(end);
-    
-    setContent(newContent);
-    
-    // Set cursor position after inserted text
-    setTimeout(() => {
-      textarea.focus();
-      const newPosition = start + htmlToInsert.length;
-      textarea.setSelectionRange(newPosition, newPosition);
-    }, 100);
-  };
-
-  const wrapSelectedText = (openTag: string, closeTag: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    const wrappedText = openTag + (selectedText || 'text') + closeTag;
-    
-    const newContent = content.substring(0, start) + wrappedText + content.substring(end);
-    setContent(newContent);
-    
-    setTimeout(() => {
-      textarea.focus();
-      if (selectedText) {
-        textarea.setSelectionRange(start + openTag.length, start + openTag.length + selectedText.length);
-      } else {
-        textarea.setSelectionRange(start + openTag.length, start + openTag.length + 4); // Select "text"
-      }
-    }, 100);
-  };
-
-  const insertFormatting = (format: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    
-    let htmlToInsert = '';
-    
-    switch (format) {
-      case 'bold':
-        wrapSelectedText('<strong>', '</strong>');
-        return;
-      case 'italic':
-        wrapSelectedText('<em>', '</em>');
-        return;
-      case 'underline':
-        wrapSelectedText('<u>', '</u>');
-        return;
-      case 'h1':
-        htmlToInsert = `<h1>${selectedText || 'Heading 1'}</h1>`;
-        break;
-      case 'h2':
-        htmlToInsert = `<h2>${selectedText || 'Heading 2'}</h2>`;
-        break;
-      case 'h3':
-        htmlToInsert = `<h3>${selectedText || 'Heading 3'}</h3>`;
-        break;
-      case 'h4':
-        htmlToInsert = `<h4>${selectedText || 'Heading 4'}</h4>`;
-        break;
-      case 'bullet-list':
-        htmlToInsert = `<ul>
-  <li>${selectedText || 'List item'}</li>
-  <li>Second item</li>
-  <li>Third item</li>
-</ul>`;
-        break;
-      case 'numbered-list':
-        htmlToInsert = `<ol>
-  <li>${selectedText || 'First item'}</li>
-  <li>Second item</li>
-  <li>Third item</li>
-</ol>`;
-        break;
-      case 'link':
-        const linkText = selectedText || 'link text';
-        const url = prompt('Enter the URL:') || 'https://example.com';
-        htmlToInsert = `<a href="${url}" target="_blank">${linkText}</a>`;
-        break;
-      case 'cta-button':
-        const buttonText = selectedText || 'Apply Now';
-        const buttonUrl = prompt('Enter the URL for this button:') || 'https://example.com';
-        htmlToInsert = `<div style="text-align: center; margin: 24px 0;">
-  <a href="${buttonUrl}" target="_blank" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; text-decoration: none; display: inline-block; hover:transform: translateY(-2px);">${buttonText}</a>
-</div>`;
-        break;
-      case 'paragraph':
-        htmlToInsert = `<p>${selectedText || 'Your paragraph text here'}</p>`;
-        break;
     }
     
-    if (htmlToInsert) {
-      insertAtCursor(htmlToInsert);
-    }
+    setIsRewriting(false);
   };
 
-  const validateContent = () => {
-    // Count words by stripping HTML tags and counting text content
-    const textContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    const wordCount = textContent.split(' ').filter(word => word.length > 0).length;
-    
-    if (!title.trim()) {
+  const handleNext = () => {
+    if (!formData.title.trim()) {
       toast({
         title: "Title Required",
-        description: "Please provide a title for your blog post.",
+        description: "Please enter a blog title.",
         variant: "destructive",
       });
-      return false;
-    }
-    
-    if (wordCount < 1000) {
-      toast({
-        title: "Content Too Short",
-        description: `Your content has ${wordCount} words. Minimum 1000 words required.`,
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    if (!featuredImage.trim()) {
-      toast({
-        title: "Featured Image Required",
-        description: "Please provide a featured image URL.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    return true;
-  };
-
-  const publishBlog = async (status: 'published' | 'draft') => {
-    if (!validateContent() && status === 'published') {
       return;
     }
 
-    setIsPublishing(true);
-    
-    try {
-      console.log('Publishing blog with status:', status);
-
-      const { data, error } = await supabase.functions.invoke('blog-operations', {
-        body: {
-          action: 'create',
-          title: title.trim(),
-          content: content.trim(),
-          featuredImage: featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
-          author: author.trim(),
-          applicationLink: applicationLink.trim() || undefined,
-          category: category || undefined,
-          status
-        }
-      });
-
-      console.log('Blog creation response:', { data, error });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(`API Error: ${error.message}`);
-      }
-      
-      if (data?.error) {
-        console.error('Blog operations error:', data.error);
-        throw new Error(data.error);
-      }
-
-      if (!data?.success || !data?.blog) {
-        console.error('Invalid response from blog operations:', data);
-        throw new Error('Invalid response from blog service');
-      }
-
-      onBlogCreated(data.blog);
-      
+    if (!formData.excerpt.trim()) {
       toast({
-        title: status === 'published' ? "Blog Published! 🎉" : "Draft Saved! 📝",
-        description: `Your blog has been ${status === 'published' ? 'published successfully' : 'saved as a draft'}.`,
-      });
-    } catch (error) {
-      console.error('Blog publish error:', error);
-      toast({
-        title: "Operation Failed",
-        description: error instanceof Error ? error.message : "There was an error saving your blog.",
+        title: "Excerpt Required", 
+        description: "Please enter a blog excerpt.",
         variant: "destructive",
       });
+      return;
     }
-    
-    setIsPublishing(false);
+
+    if (!formData.content.trim()) {
+      toast({
+        title: "Content Required",
+        description: "Please enter blog content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (wordCount < minWordCount) {
+      toast({
+        title: "Word Count Too Low",
+        description: `Blog content must be at least ${minWordCount} words. Current count: ${wordCount} words.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onNext(formData);
   };
 
-  // Count words by stripping HTML tags
-  const textContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const wordCount = textContent.split(' ').filter(word => word.length > 0).length;
-
-  if (showPreview) {
-    return (
-      <div className="space-y-6">
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl dark:bg-slate-800/90">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900 dark:text-white">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Eye className="w-4 h-4" />
-              </div>
-              HTML Content Preview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {featuredImage && (
-                <img src={featuredImage} alt={title} className="w-full h-48 md:h-64 object-cover rounded-lg" />
-              )}
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
-              <p className="text-gray-600 dark:text-gray-400">By {author} • {wordCount} words</p>
-              
-              <div className="p-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600">
-                <div 
-                  className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: applyStylesToHTML(content) }}
-                  style={{
-                    color: 'inherit'
-                  }}
-                />
-              </div>
-            </div>
-            
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Word count: {wordCount} words
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
-              <Button 
-                onClick={() => setShowPreview(false)}
-                variant="outline"
-                className="flex items-center gap-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Edit
-              </Button>
-              
-              <Button 
-                onClick={() => publishBlog('draft')}
-                variant="outline"
-                disabled={isPublishing}
-                className="flex items-center gap-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
-              >
-                <Save className="w-4 h-4" />
-                Save as Draft
-              </Button>
-              
-              <Button 
-                onClick={() => publishBlog('published')}
-                disabled={isPublishing}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700"
-              >
-                {isPublishing ? (
-                  <>
-                    <Upload className="w-4 h-4 animate-pulse" />
-                    Publishing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    🚀 Publish Blog
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Dark mode compatible CSS for preview content */}
-        <style>{`
-          .dark .prose h1,
-          .dark .prose h2,
-          .dark .prose h3,
-          .dark .prose h4,
-          .dark .prose p,
-          .dark .prose li,
-          .dark .prose strong {
-            color: #f9fafb !important;
-          }
-          .dark .prose a {
-            color: #60a5fa !important;
-          }
-          .dark .prose h2 {
-            border-bottom-color: #374151 !important;
-          }
-        `}</style>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 md:space-y-8">
-      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl dark:bg-slate-800/90">
+    <div className="space-y-8">
+      <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-lg md:text-xl text-slate-900 dark:text-white">
-            <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-slate-900 dark:text-white">
+            <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-pink-500 rounded-xl flex items-center justify-center">
+              <FileText className="w-4 h-4 text-white" />
+            </div>
             Step 2: Blog Setup & HTML Editor
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 md:space-y-6">
-          {/* Blog Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div>
-              <Label htmlFor="title" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Blog Title *</Label>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-slate-700 dark:text-slate-200 font-medium">Blog Title *</Label>
               <Input
                 id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter an engaging title..."
-                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                placeholder="Enter an engaging blog title..."
+                className="bg-white/80 dark:bg-slate-700/80 border-violet-200 dark:border-slate-600 focus:border-violet-400 dark:focus:border-violet-400 rounded-xl shadow-lg backdrop-blur-sm"
               />
             </div>
-            
-            <div>
-              <Label htmlFor="author" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">Author</Label>
-              <Input
-                id="author"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Author name..."
-                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div>
-              <Label htmlFor="category" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <Briefcase className="w-3 h-3 md:w-4 md:h-4" />
-                Category *
-              </Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100">
-                  <SelectValue placeholder="Select category..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full-time">Full-Time</SelectItem>
-                  <SelectItem value="part-time">Part-Time</SelectItem>
-                  <SelectItem value="internship">Internship</SelectItem>
-                  <SelectItem value="contract">Contract</SelectItem>
-                  <SelectItem value="remote">Remote</SelectItem>
-                  <SelectItem value="freelance">Freelance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="featuredImage" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <ImageIcon className="w-3 h-3 md:w-4 md:h-4" />
-                Featured Image URL *
+            <div className="space-y-3">
+              <Label htmlFor="featuredImage" className="text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2">
+                <Image className="w-4 h-4" />
+                Featured Image URL
               </Label>
               <Input
                 id="featuredImage"
-                value={featuredImage}
-                onChange={(e) => setFeaturedImage(e.target.value)}
-                placeholder="https://example.com/featured-image.jpg"
-                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="applicationLink" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <Link className="w-3 h-3 md:w-4 md:h-4" />
-                Application Link
-              </Label>
-              <Input
-                id="applicationLink"
-                value={applicationLink}
-                onChange={(e) => setApplicationLink(e.target.value)}
-                placeholder="https://example.com/apply"
-                className="mt-2 h-10 md:h-12 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
+                value={formData.featuredImage}
+                onChange={(e) => handleInputChange('featuredImage', e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="bg-white/80 dark:bg-slate-700/80 border-violet-200 dark:border-slate-600 focus:border-violet-400 dark:focus:border-violet-400 rounded-xl shadow-lg backdrop-blur-sm"
               />
             </div>
           </div>
 
+          <div className="space-y-3">
+            <Label htmlFor="excerpt" className="text-slate-700 dark:text-slate-200 font-medium">Blog Excerpt *</Label>
+            <Textarea
+              id="excerpt"
+              value={formData.excerpt}
+              onChange={(e) => handleInputChange('excerpt', e.target.value)}
+              placeholder="Write a compelling excerpt that summarizes your blog..."
+              className="bg-white/80 dark:bg-slate-700/80 border-violet-200 dark:border-slate-600 focus:border-violet-400 dark:focus:border-violet-400 rounded-xl shadow-lg backdrop-blur-sm min-h-[100px]"
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="applyLink" className="text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2">
+              <Link className="w-4 h-4" />
+              Apply Link (Optional)
+            </Label>
+            <Input
+              id="applyLink"
+              value={formData.applyLink}
+              onChange={(e) => handleInputChange('applyLink', e.target.value)}
+              placeholder="https://company.com/apply"
+              className="bg-white/80 dark:bg-slate-700/80 border-violet-200 dark:border-slate-600 focus:border-violet-400 dark:focus:border-violet-400 rounded-xl shadow-lg backdrop-blur-sm"
+            />
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              If provided, a prominent "Apply Here" button will be displayed in the blog post.
+            </p>
+          </div>
+
           {/* Featured Image Preview */}
-          {featuredImage && (
-            <div className="mt-2">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Featured Image Preview:</p>
-              <div className="w-full max-w-md">
-                <img 
-                  src={featuredImage} 
-                  alt="Featured image preview" 
-                  className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+          {formData.featuredImage && (
+            <div className="space-y-3">
+              <Label className="text-slate-700 dark:text-slate-200 font-medium">Image Preview</Label>
+              <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-lg">
+                <img
+                  src={formData.featuredImage}
+                  alt="Featured"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.nextElementSibling!.classList.remove('hidden');
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop";
                   }}
                 />
-                <div className="hidden w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Invalid image URL</p>
-                </div>
               </div>
             </div>
           )}
 
-          {/* HTML Editor */}
-          <div>
-            <Label htmlFor="content" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">
-              Clean HTML Editor ({wordCount} words - Min: 1000) 
-              <span className={wordCount < 1000 ? "text-red-500 ml-2" : "text-green-500 ml-2"}>
-                {wordCount < 1000 ? `Need ${1000 - wordCount} more words` : "✓ Word count met"}
-              </span>
-            </Label>
-            
-            {/* HTML Formatting Toolbar */}
-            <div className="flex flex-wrap gap-2 mt-2 mb-2 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-600">
-              {/* Text Formatting */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('bold')} 
-                  title="Bold"
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="content" className="text-slate-700 dark:text-slate-200 font-medium">
+                Blog Content * 
+                <span className={`ml-2 text-sm ${wordCount < minWordCount ? 'text-red-500' : 'text-green-500'}`}>
+                  ({wordCount}/{minWordCount} words minimum)
+                </span>
+              </Label>
+              <div className="flex gap-2">
+                <Button
                   type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
+                  onClick={rewriteWithAI}
+                  disabled={isRewriting || !formData.content.trim()}
+                  className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 text-sm px-3 py-1.5 h-auto"
                 >
-                  <Bold className="w-3 h-3" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('italic')} 
-                  title="Italic"
-                  type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
-                >
-                  <Italic className="w-3 h-3" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('underline')} 
-                  title="Underline"
-                  type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
-                >
-                  <Type className="w-3 h-3" />
-                </Button>
-              </div>
-
-              {/* Headings */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h1')} title="Heading 1" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
-                  H1
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h2')} title="Heading 2" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
-                  H2
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h3')} title="Heading 3" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
-                  H3
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => insertFormatting('h4')} title="Heading 4" type="button" className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200">
-                  H4
-                </Button>
-              </div>
-
-              {/* Structure */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('paragraph')} 
-                  title="Paragraph"
-                  type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
-                >
-                  P
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('bullet-list')} 
-                  title="Bullet List"
-                  type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
-                >
-                  <List className="w-3 h-3" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('numbered-list')} 
-                  title="Numbered List"
-                  type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
-                >
-                  1.
-                </Button>
-              </div>
-
-              {/* Links & Media */}
-              <div className="flex gap-1 pr-2 border-r border-gray-300 dark:border-gray-600">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('link')} 
-                  title="Insert Link"
-                  type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
-                >
-                  <Link className="w-3 h-3" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => fileInputRef.current?.click()} 
-                  disabled={uploadingImage}
-                  title="Upload Image"
-                  type="button"
-                  className="bg-white dark:bg-slate-600 border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200"
-                >
-                  {uploadingImage ? (
-                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  {isRewriting ? (
+                    <>
+                      <Sparkles className="w-3 h-3 animate-spin" />
+                      Rewriting...
+                    </>
                   ) : (
-                    <ImageIcon className="w-3 h-3" />
+                    <>
+                      <Sparkles className="w-3 h-3" />
+                      AI Rewrite
+                    </>
                   )}
                 </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </div>
-
-              {/* CTA Button */}
-              <div className="flex gap-1">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => insertFormatting('cta-button')} 
-                  className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 border-blue-200 dark:border-blue-700 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-800/40 dark:hover:to-purple-800/40 text-blue-700 dark:text-blue-300"
-                  title="Insert CTA Button (with styles)"
+                <Button
                   type="button"
+                  onClick={() => setShowPreview(!showPreview)}
+                  variant="outline"
+                  className="flex items-center gap-2 text-sm px-3 py-1.5 h-auto"
                 >
-                  <Plus className="w-3 h-3 mr-1" />
-                  CTA Button
+                  {showPreview ? (
+                    <>
+                      <EyeOff className="w-3 h-3" />
+                      Hide Preview
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-3 h-3" />
+                      Show Preview
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
             
-            <Textarea
-              ref={textareaRef}
-              id="content-editor"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write clean HTML here... The toolbar creates minimal HTML tags. Styles are applied only during preview and publishing!"
-              rows={24}
-              className="mt-2 font-mono text-sm resize-none bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              💡 <strong>Clean HTML Mode:</strong> Write minimal HTML tags without inline styles. 
-              Styles are automatically applied during preview and publishing. Only CTA buttons include styles for design purposes.
-            </p>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => handleInputChange('content', e.target.value)}
+                  placeholder="Write your blog content using HTML tags for formatting:
+
+<h2>Main Section</h2>
+<p>Your paragraph text here.</p>
+
+<h3>Subsection</h3>
+<ul>
+  <li>Bullet point 1</li>
+  <li>Bullet point 2</li>
+</ul>
+
+<p><strong>Bold text</strong> and <em>italic text</em></p>
+
+<button style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease; font-size: 16px;' onmouseover='this.style.transform=\"translateY(-2px)\"; this.style.boxShadow=\"0 6px 20px rgba(0,0,0,0.3)\";' onmouseout='this.style.transform=\"translateY(0)\"; this.style.boxShadow=\"0 4px 15px rgba(0,0,0,0.2)\";'>Call to Action Button</button>"
+                  className="bg-white/80 dark:bg-slate-700/80 border-violet-200 dark:border-slate-600 focus:border-violet-400 dark:focus:border-violet-400 rounded-xl shadow-lg backdrop-blur-sm min-h-[400px] font-mono text-sm"
+                />
+              </div>
+
+              {showPreview && (
+                <div className="space-y-2">
+                  <Label className="text-slate-700 dark:text-slate-200 font-medium">Preview</Label>
+                  <div className="bg-white/80 dark:bg-slate-700/80 border border-violet-200 dark:border-slate-600 rounded-xl shadow-lg backdrop-blur-sm p-6 min-h-[400px] overflow-auto prose prose-sm md:prose-lg max-w-none dark:prose-invert">
+                    <div 
+                      className="html-content"
+                      dangerouslySetInnerHTML={{ __html: applyStylesToHTML(formData.content) }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-violet-50/50 dark:bg-slate-700/30 p-4 rounded-xl">
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                <strong>HTML Formatting Tips:</strong>
+              </p>
+              <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                <li>• Use <code>&lt;h2&gt;</code>, <code>&lt;h3&gt;</code>, <code>&lt;h4&gt;</code> for headings</li>
+                <li>• Use <code>&lt;p&gt;</code> for paragraphs</li>
+                <li>• Use <code>&lt;ul&gt;&lt;li&gt;</code> for bullet points, <code>&lt;ol&gt;&lt;li&gt;</code> for numbered lists</li>
+                <li>• Use <code>&lt;strong&gt;</code> for bold, <code>&lt;em&gt;</code> for italic</li>
+                <li>• Use <code>&lt;a href="url"&gt;</code> for links</li>
+                <li>• Copy the CTA button code above and customize the text as needed</li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex justify-end">
             <Button 
-              onClick={onBack}
-              variant="outline"
-              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
-              type="button"
+              onClick={handleNext}
+              disabled={!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || wordCount < minWordCount}
+              className="flex items-center gap-2 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 hover:from-violet-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 px-8 py-3 text-lg font-semibold"
             >
-              <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
-              Back to Content
-            </Button>
-            
-            <Button 
-              onClick={() => setShowPreview(true)}
-              variant="outline"
-              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
-              type="button"
-            >
-              <Eye className="w-3 h-3 md:w-4 md:h-4" />
-              Preview (with styles)
-            </Button>
-            
-            <Button 
-              onClick={() => publishBlog('draft')}
-              variant="outline"
-              disabled={isPublishing}
-              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 border-2 bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600"
-              type="button"
-            >
-              <Save className="w-3 h-3 md:w-4 md:h-4" />
-              Save as Draft
-            </Button>
-            
-            <Button 
-              onClick={() => publishBlog('published')}
-              disabled={isPublishing}
-              className="flex items-center gap-2 h-10 md:h-12 px-4 md:px-6 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700"
-              type="button"
-            >
-              {isPublishing ? (
-                <>
-                  <Upload className="w-3 h-4 md:w-4 md:h-4 animate-pulse" />
-                  Publishing...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-3 h-4 md:w-4 md:h-4" />
-                  🚀 Publish Blog
-                </>
-              )}
+              Continue to Review
+              <ArrowRight className="w-5 h-5" />
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Enhanced dark mode compatible CSS for HTML content styling */}
+      <style>{`
+        .html-content {
+          line-height: 1.7;
+        }
+        .dark .html-content h1,
+        .dark .html-content h2,
+        .dark .html-content h3,
+        .dark .html-content h4,
+        .dark .html-content p,
+        .dark .html-content li,
+        .dark .html-content strong {
+          color: #f9fafb !important;
+        }
+        .dark .html-content h2 {
+          border-bottom-color: #374151 !important;
+        }
+        .dark .html-content h3 {
+          color: #e5e7eb !important;
+        }
+        .dark .html-content h4 {
+          color: #d1d5db !important;
+        }
+        .dark .html-content ul, .dark .html-content ol {
+          color: #d1d5db !important;
+        }
+        .dark .html-content a {
+          color: #60a5fa !important;
+        }
+        .dark .html-content a:hover {
+          color: #93c5fd !important;
+        }
+      `}</style>
     </div>
   );
 };

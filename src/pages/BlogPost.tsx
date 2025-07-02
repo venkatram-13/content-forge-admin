@@ -54,9 +54,42 @@ const BlogPost = () => {
       // Process HTML content: add IDs to headings and apply styles
       const contentWithIds = addIdsToHeadings(blog.content);
       const styledContent = applyStylesToHTML(contentWithIds);
-      setProcessedContent(styledContent);
+      
+      // Add ad banners after each section (after h2 headings)
+      const contentWithAds = addAdBannersAfterSections(styledContent);
+      setProcessedContent(contentWithAds);
     }
   }, [blog?.content]);
+
+  const addAdBannersAfterSections = (content: string): string => {
+    // Split content by h2 headings and add ad banners after each section
+    const h2Regex = /(<h2[^>]*>.*?<\/h2>)/gi;
+    const sections = content.split(h2Regex);
+    
+    let result = '';
+    let adCounter = 1;
+    
+    for (let i = 0; i < sections.length; i++) {
+      result += sections[i];
+      
+      // If this is an h2 heading and not the last section, add content and then an ad
+      if (sections[i].match(h2Regex) && i < sections.length - 1) {
+        // Add the content after the heading
+        if (i + 1 < sections.length) {
+          result += sections[i + 1];
+          i++; // Skip the next section since we just added it
+        }
+        
+        // Add ad banner after the section content (but not after the last section)
+        if (i < sections.length - 1) {
+          result += `<div class="my-8"><div class="bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium h-20 md:h-24"><span class="opacity-50">Ad Space - Section ${adCounter}</span></div></div>`;
+          adCounter++;
+        }
+      }
+    }
+    
+    return result;
+  };
 
   const fetchBlog = async () => {
     if (!slug) {
@@ -230,7 +263,7 @@ const BlogPost = () => {
             {/* Table of Contents */}
             <TableOfContents items={toc} />
 
-            {/* Article Content with HTML */}
+            {/* Article Content with HTML and Ad Banners */}
             <div className="prose prose-sm md:prose-lg max-w-none dark:prose-invert">
               {/* In-Content Ad after TOC */}
               <AdPlaceholder 
