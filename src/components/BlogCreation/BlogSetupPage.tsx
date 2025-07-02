@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -75,7 +74,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string;
-        insertAtCursor(`<img src="${imageUrl}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 16px 0;" />`);
+        insertAtCursor(`<img src="${imageUrl}" alt="${file.name}" />`);
       };
       reader.readAsDataURL(file);
       
@@ -159,35 +158,35 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
         wrapSelectedText('<u>', '</u>');
         return;
       case 'h1':
-        htmlToInsert = `<h1 style="font-size: 2rem; font-weight: bold; margin: 32px 0 16px; color: #1f2937;">${selectedText || 'Heading 1'}</h1>`;
+        htmlToInsert = `<h1>${selectedText || 'Heading 1'}</h1>`;
         break;
       case 'h2':
-        htmlToInsert = `<h2 style="font-size: 1.75rem; font-weight: bold; margin: 24px 0 12px; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">${selectedText || 'Heading 2'}</h2>`;
+        htmlToInsert = `<h2>${selectedText || 'Heading 2'}</h2>`;
         break;
       case 'h3':
-        htmlToInsert = `<h3 style="font-size: 1.5rem; font-weight: 600; margin: 20px 0 10px; color: #374151;">${selectedText || 'Heading 3'}</h3>`;
+        htmlToInsert = `<h3>${selectedText || 'Heading 3'}</h3>`;
         break;
       case 'h4':
-        htmlToInsert = `<h4 style="font-size: 1.25rem; font-weight: 600; margin: 16px 0 8px; color: #4b5563;">${selectedText || 'Heading 4'}</h4>`;
+        htmlToInsert = `<h4>${selectedText || 'Heading 4'}</h4>`;
         break;
       case 'bullet-list':
-        htmlToInsert = `<ul style="margin: 16px 0; padding-left: 24px; color: #374151;">
-  <li style="margin: 8px 0;">${selectedText || 'List item'}</li>
-  <li style="margin: 8px 0;">Second item</li>
-  <li style="margin: 8px 0;">Third item</li>
+        htmlToInsert = `<ul>
+  <li>${selectedText || 'List item'}</li>
+  <li>Second item</li>
+  <li>Third item</li>
 </ul>`;
         break;
       case 'numbered-list':
-        htmlToInsert = `<ol style="margin: 16px 0; padding-left: 24px; color: #374151;">
-  <li style="margin: 8px 0;">${selectedText || 'First item'}</li>
-  <li style="margin: 8px 0;">Second item</li>
-  <li style="margin: 8px 0;">Third item</li>
+        htmlToInsert = `<ol>
+  <li>${selectedText || 'First item'}</li>
+  <li>Second item</li>
+  <li>Third item</li>
 </ol>`;
         break;
       case 'link':
         const linkText = selectedText || 'link text';
         const url = prompt('Enter the URL:') || 'https://example.com';
-        htmlToInsert = `<a href="${url}" style="color: #2563eb; text-decoration: underline;" target="_blank">${linkText}</a>`;
+        htmlToInsert = `<a href="${url}" target="_blank">${linkText}</a>`;
         break;
       case 'cta-button':
         const buttonText = selectedText || 'Apply Now';
@@ -197,13 +196,105 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
 </div>`;
         break;
       case 'paragraph':
-        htmlToInsert = `<p style="margin: 16px 0; line-height: 1.7; color: #374151;">${selectedText || 'Your paragraph text here'}</p>`;
+        htmlToInsert = `<p>${selectedText || 'Your paragraph text here'}</p>`;
         break;
     }
     
     if (htmlToInsert) {
       insertAtCursor(htmlToInsert);
     }
+  };
+
+  // Function to apply styles to HTML content for preview/display
+  const applyStylesToContent = (htmlContent: string): string => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Apply styles to elements
+    const h1Elements = tempDiv.querySelectorAll('h1');
+    h1Elements.forEach(h1 => {
+      h1.style.fontSize = '2rem';
+      h1.style.fontWeight = 'bold';
+      h1.style.margin = '32px 0 16px';
+      h1.style.color = '#1f2937';
+    });
+
+    const h2Elements = tempDiv.querySelectorAll('h2');
+    h2Elements.forEach(h2 => {
+      h2.style.fontSize = '1.75rem';
+      h2.style.fontWeight = 'bold';
+      h2.style.margin = '24px 0 12px';
+      h2.style.color = '#1f2937';
+      h2.style.borderBottom = '2px solid #e5e7eb';
+      h2.style.paddingBottom = '8px';
+    });
+
+    const h3Elements = tempDiv.querySelectorAll('h3');
+    h3Elements.forEach(h3 => {
+      h3.style.fontSize = '1.5rem';
+      h3.style.fontWeight = '600';
+      h3.style.margin = '20px 0 10px';
+      h3.style.color = '#374151';
+    });
+
+    const h4Elements = tempDiv.querySelectorAll('h4');
+    h4Elements.forEach(h4 => {
+      h4.style.fontSize = '1.25rem';
+      h4.style.fontWeight = '600';
+      h4.style.margin = '16px 0 8px';
+      h4.style.color = '#4b5563';
+    });
+
+    const pElements = tempDiv.querySelectorAll('p');
+    pElements.forEach(p => {
+      p.style.margin = '16px 0';
+      p.style.lineHeight = '1.7';
+      p.style.color = '#374151';
+    });
+
+    const ulElements = tempDiv.querySelectorAll('ul');
+    ulElements.forEach(ul => {
+      ul.style.margin = '16px 0';
+      ul.style.paddingLeft = '24px';
+      ul.style.color = '#374151';
+    });
+
+    const olElements = tempDiv.querySelectorAll('ol');
+    olElements.forEach(ol => {
+      ol.style.margin = '16px 0';
+      ol.style.paddingLeft = '24px';
+      ol.style.color = '#374151';
+    });
+
+    const liElements = tempDiv.querySelectorAll('li');
+    liElements.forEach(li => {
+      li.style.margin = '8px 0';
+    });
+
+    const aElements = tempDiv.querySelectorAll('a');
+    aElements.forEach(a => {
+      // Don't style CTA buttons (they already have inline styles)
+      if (!a.style.background) {
+        a.style.color = '#2563eb';
+        a.style.textDecoration = 'underline';
+      }
+    });
+
+    const strongElements = tempDiv.querySelectorAll('strong');
+    strongElements.forEach(strong => {
+      strong.style.fontWeight = '700';
+      strong.style.color = '#1f2937';
+    });
+
+    const imgElements = tempDiv.querySelectorAll('img');
+    imgElements.forEach(img => {
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.borderRadius = '8px';
+      img.style.margin = '16px 0';
+    });
+
+    return tempDiv.innerHTML;
   };
 
   const validateContent = () => {
@@ -326,7 +417,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               <div className="p-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600">
                 <div 
                   className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: content }}
+                  dangerouslySetInnerHTML={{ __html: applyStylesToContent(content) }}
                 />
               </div>
             </div>
@@ -477,7 +568,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
           {/* HTML Editor */}
           <div>
             <Label htmlFor="content" className="text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">
-              HTML Editor ({wordCount} words - Min: 1000) 
+              Clean HTML Editor ({wordCount} words - Min: 1000) 
               <span className={wordCount < 1000 ? "text-red-500 ml-2" : "text-green-500 ml-2"}>
                 {wordCount < 1000 ? `Need ${1000 - wordCount} more words` : "✓ Word count met"}
               </span>
@@ -612,7 +703,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
                   variant="outline" 
                   onClick={() => insertFormatting('cta-button')} 
                   className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 border-blue-200 dark:border-blue-700 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-800/40 dark:hover:to-purple-800/40 text-blue-700 dark:text-blue-300"
-                  title="Insert CTA Button"
+                  title="Insert CTA Button (with styles)"
                   type="button"
                 >
                   <Plus className="w-3 h-3 mr-1" />
@@ -626,14 +717,13 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               id="content-editor"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Edit your blog content here using HTML... Use the toolbar above to insert formatted HTML elements!"
+              placeholder="Write clean HTML here... The toolbar creates minimal HTML tags. Styles are applied only during preview and publishing!"
               rows={24}
               className="mt-2 font-mono text-sm resize-none bg-white/90 dark:bg-slate-700/90 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              💡 <strong>Pro Tips:</strong> This is an HTML editor. Select text before applying formatting to wrap it in HTML tags. 
-              Upload images directly using the 📷 button. Create styled CTA buttons with custom URLs. 
-              Minimum 1000 words required for publication.
+              💡 <strong>Clean HTML Mode:</strong> Write minimal HTML tags without inline styles. 
+              Styles are automatically applied during preview and publishing. Only CTA buttons include styles for design purposes.
             </p>
           </div>
 
@@ -655,7 +745,7 @@ export const BlogSetupPage = ({ initialContent, initialTitle, onBlogCreated, onB
               type="button"
             >
               <Eye className="w-3 h-3 md:w-4 md:h-4" />
-              Preview
+              Preview (with styles)
             </Button>
             
             <Button 

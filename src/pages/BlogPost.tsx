@@ -9,6 +9,7 @@ import { RecentBlogs } from '@/components/RecentBlogs';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { supabase } from '@/integrations/supabase/client';
+import { generateTableOfContentsFromHTML, addIdsToHeadings, applyStylesToHTML } from '@/utils/htmlRenderer';
 
 interface Blog {
   id: string;
@@ -33,33 +34,6 @@ const AdPlaceholder = ({ id, className = "", label }: { id: string; className?: 
   </div>
 );
 
-const generateTableOfContentsFromHTML = (htmlContent: string): TOCItem[] => {
-  const toc: TOCItem[] = [];
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = htmlContent;
-  
-  const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
-  
-  headings.forEach((heading) => {
-    const level = parseInt(heading.tagName.charAt(1));
-    if (level >= 2 && level <= 4) { // Only include h2, h3, h4 in TOC
-      const text = heading.textContent?.trim() || '';
-      const id = text.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-      
-      // Add ID to the heading for anchor linking
-      heading.id = id;
-      
-      toc.push({ id, text, level });
-    }
-  });
-  
-  return toc;
-};
-
 const BlogPost = () => {
   const { slug } = useParams();
   const [blog, setBlog] = useState<Blog | null>(null);
@@ -78,22 +52,10 @@ const BlogPost = () => {
       const tocItems = generateTableOfContentsFromHTML(blog.content);
       setToc(tocItems);
       
-      // Process HTML content to add IDs to headings
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = blog.content;
-      
-      const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      headings.forEach((heading) => {
-        const text = heading.textContent?.trim() || '';
-        const id = text.toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '');
-        heading.id = id;
-      });
-      
-      setProcessedContent(tempDiv.innerHTML);
+      // Process HTML content: add IDs to headings and apply styles
+      const contentWithIds = addIdsToHeadings(blog.content);
+      const styledContent = applyStylesToHTML(contentWithIds);
+      setProcessedContent(styledContent);
     }
   }, [blog?.content]);
 
@@ -401,121 +363,38 @@ const BlogPost = () => {
         </div>
       </footer>
 
-      {/* CSS for HTML content styling */}
+      {/* Dark mode compatible CSS for HTML content styling */}
       <style>{`
         .html-content {
           line-height: 1.7;
         }
-        .html-content h1 {
-          font-size: 2rem;
-          font-weight: bold;
-          margin: 32px 0 16px;
-          color: #1f2937;
-        }
         .dark .html-content h1 {
-          color: #f9fafb;
-        }
-        .html-content h2 {
-          font-size: 1.75rem;
-          font-weight: bold;
-          margin: 24px 0 12px;
-          color: #1f2937;
-          border-bottom: 2px solid #e5e7eb;
-          padding-bottom: 8px;
+          color: #f9fafb !important;
         }
         .dark .html-content h2 {
-          color: #f9fafb;
-          border-bottom-color: #374151;
-        }
-        .html-content h3 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin: 20px 0 10px;
-          color: #374151;
+          color: #f9fafb !important;
+          border-bottom-color: #374151 !important;
         }
         .dark .html-content h3 {
-          color: #e5e7eb;
-        }
-        .html-content h4 {
-          font-size: 1.25rem;
-          font-weight: 600;
-          margin: 16px 0 8px;
-          color: #4b5563;
+          color: #e5e7eb !important;
         }
         .dark .html-content h4 {
-          color: #d1d5db;
-        }
-        .html-content p {
-          margin: 16px 0;
-          line-height: 1.7;
-          color: #374151;
+          color: #d1d5db !important;
         }
         .dark .html-content p {
-          color: #d1d5db;
-        }
-        .html-content ul, .html-content ol {
-          margin: 16px 0;
-          padding-left: 24px;
-          color: #374151;
+          color: #d1d5db !important;
         }
         .dark .html-content ul, .dark .html-content ol {
-          color: #d1d5db;
-        }
-        .html-content li {
-          margin: 8px 0;
-        }
-        .html-content a {
-          color: #2563eb;
-          text-decoration: underline;
+          color: #d1d5db !important;
         }
         .dark .html-content a {
-          color: #60a5fa;
-        }
-        .html-content a:hover {
-          color: #1d4ed8;
+          color: #60a5fa !important;
         }
         .dark .html-content a:hover {
-          color: #93c5fd;
-        }
-        .html-content strong {
-          font-weight: 700;
-          color: #1f2937;
+          color: #93c5fd !important;
         }
         .dark .html-content strong {
-          color: #f9fafb;
-        }
-        .html-content em {
-          font-style: italic;
-        }
-        .html-content u {
-          text-decoration: underline;
-        }
-        .html-content img {
-          max-width: 100%;
-          height: auto;
-          border-radius: 8px;
-          margin: 16px 0;
-        }
-        .html-content div[style*="text-align: center"] {
-          text-align: center;
-          margin: 24px 0;
-        }
-        .html-content div[style*="text-align: center"] a {
-          display: inline-block;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 16px 32px;
-          border: none;
-          border-radius: 8px;
-          font-weight: bold;
-          font-size: 16px;
-          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-          transition: all 0.3s ease;
-          text-decoration: none;
-        }
-        .html-content div[style*="text-align: center"] a:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+          color: #f9fafb !important;
         }
       `}</style>
     </div>
