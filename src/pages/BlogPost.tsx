@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { TableOfContents, TOCItem } from '@/components/TableOfContents';
 import { RecentBlogs } from '@/components/RecentBlogs';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -40,6 +41,7 @@ const BlogPost = () => {
   const [error, setError] = useState<string | null>(null);
   const [toc, setToc] = useState<TOCItem[]>([]);
   const [processedContent, setProcessedContent] = useState('');
+  const [readingProgress, setReadingProgress] = useState(0);
 
   useEffect(() => {
     fetchBlog();
@@ -60,6 +62,18 @@ const BlogPost = () => {
       setProcessedContent(contentWithAds);
     }
   }, [blog?.content]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = (scrollTop / docHeight) * 100;
+      setReadingProgress(Math.min(scrollPercent, 100));
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const addAdBannersAfterSections = (content: string): string => {
     // Split content by h2 headings and add ad banners after each section
@@ -218,6 +232,14 @@ const BlogPost = () => {
               </Button>
             </div>
           </div>
+        </div>
+        
+        {/* Reading Progress Bar */}
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-200 dark:bg-gray-700">
+          <Progress 
+            value={readingProgress} 
+            className="h-1 rounded-none bg-transparent"
+          />
         </div>
       </header>
 
