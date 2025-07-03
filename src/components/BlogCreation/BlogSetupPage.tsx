@@ -36,6 +36,22 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
   const [isRewriting, setIsRewriting] = useState(false);
   const { toast } = useToast();
 
+  // Move the placeholder content to a template literal to avoid JSX parsing issues
+  const blogPlaceholder = `Write your blog content using HTML tags for formatting:
+
+<h2>Main Section</h2>
+<p>Your paragraph text here.</p>
+
+<h3>Subsection</h3>
+<ul>
+  <li>Bullet point 1</li>
+  <li>Bullet point 2</li>
+</ul>
+
+<p><strong>Bold text</strong> and <em>italic text</em></p>
+
+<button style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease; font-size: 16px;">Call to Action Button</button>`;
+
   useEffect(() => {
     // Load minimum word count from settings
     const savedMinWordCount = localStorage.getItem('min_word_count');
@@ -68,7 +84,7 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
       .replace(/<strong([^>]*)>/g, '<strong$1 style="font-weight: 600; color: #1f2937;">')
       .replace(/<em([^>]*)>/g, '<em$1 style="font-style: italic;">')
       .replace(/<blockquote([^>]*)>/g, '<blockquote$1 style="border-left: 4px solid #e5e7eb; padding-left: 1rem; margin: 1.5rem 0; font-style: italic; color: #6b7280;">')
-      .replace(/<a([^>]*)>/g, '<a$1 style="color: #2563eb; text-decoration: underline; hover:color: #1d4ed8;">')
+      .replace(/<a([^>]*)>/g, '<a$1 style="color: #2563eb; text-decoration: underline;">')
       .replace(/<code([^>]*)>/g, '<code$1 style="background-color: #f3f4f6; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875rem;">');
   };
 
@@ -312,20 +328,7 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
                     id="content"
                     value={formData.content}
                     onChange={(e) => handleInputChange('content', e.target.value)}
-                    placeholder="Write your blog content using HTML tags for formatting:
-
-<h2>Main Section</h2>
-<p>Your paragraph text here.</p>
-
-<h3>Subsection</h3>
-<ul>
-  <li>Bullet point 1</li>
-  <li>Bullet point 2</li>
-</ul>
-
-<p><strong>Bold text</strong> and <em>italic text</em></p>
-
-<button style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease; font-size: 16px;' onmouseover='this.style.transform=\"translateY(-2px)\"; this.style.boxShadow=\"0 6px 20px rgba(0,0,0,0.3)\";' onmouseout='this.style.transform=\"translateY(0)\"; this.style.boxShadow=\"0 4px 15px rgba(0,0,0,0.2)\";'>Call to Action Button</button>"
+                    placeholder={blogPlaceholder}
                     className="bg-white/80 dark:bg-slate-700/80 border-violet-200 dark:border-slate-600 focus:border-violet-400 dark:focus:border-violet-400 rounded-xl shadow-lg backdrop-blur-sm min-h-[400px] font-mono text-sm"
                   />
                 </div>
