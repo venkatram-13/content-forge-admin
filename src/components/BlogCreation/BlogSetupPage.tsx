@@ -348,11 +348,11 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
                 <strong>HTML Formatting Tips:</strong>
               </p>
               <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                <li>• Use <code>&lt;h2&gt;</code>, <code>&lt;h3&gt;</code>, <code>&lt;h4&gt;</code> for headings</li>
-                <li>• Use <code>&lt;p&gt;</code> for paragraphs</li>
-                <li>• Use <code>&lt;ul&gt;&lt;li&gt;</code> for bullet points, <code>&lt;ol&gt;&lt;li&gt;</code> for numbered lists</li>
-                <li>• Use <code>&lt;strong&gt;</code> for bold, <code>&lt;em&gt;</code> for italic</li>
-                <li>• Use <code>&lt;a href="url"&gt;</code> for links</li>
+                <li>• Use &lt;h2&gt;, &lt;h3&gt;, &lt;h4&gt; for headings</li>
+                <li>• Use &lt;p&gt; for paragraphs</li>
+                <li>• Use &lt;ul&gt;&lt;li&gt; for bullet points, &lt;ol&gt;&lt;li&gt; for numbered lists</li>
+                <li>• Use &lt;strong&gt; for bold, &lt;em&gt; for italic</li>
+                <li>• Use &lt;a href="url"&gt; for links</li>
                 <li>• Copy the CTA button code above and customize the text as needed</li>
               </ul>
             </div>
