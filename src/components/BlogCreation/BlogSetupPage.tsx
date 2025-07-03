@@ -241,7 +241,6 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
             </p>
           </div>
 
-          {/* Featured Image Preview */}
           {formData.featuredImage && (
             <div className="space-y-3">
               <Label className="text-slate-700 dark:text-slate-200 font-medium">Image Preview</Label>
@@ -312,7 +311,7 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
                   id="content"
                   value={formData.content}
                   onChange={(e) => handleInputChange('content', e.target.value)}
-                  placeholder="Write your blog content using HTML tags for formatting:
+                  placeholder='Write your blog content using HTML tags for formatting:
 
 <h2>Main Section</h2>
 <p>Your paragraph text here.</p>
@@ -325,7 +324,7 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
 
 <p><strong>Bold text</strong> and <em>italic text</em></p>
 
-<button style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease; font-size: 16px;' onmouseover='this.style.transform=\"translateY(-2px)\"; this.style.boxShadow=\"0 6px 20px rgba(0,0,0,0.3)\";' onmouseout='this.style.transform=\"translateY(0)\"; this.style.boxShadow=\"0 4px 15px rgba(0,0,0,0.2)\";'>Call to Action Button</button>"
+<button style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease; font-size: 16px;" onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.boxShadow=\'0 6px 20px rgba(0,0,0,0.3)\';" onmouseout="this.style.transform=\'translateY(0)\'; this.style.boxShadow=\'0 4px 15px rgba(0,0,0,0.2)\';">Call to Action Button</button>'
                   className="bg-white/80 dark:bg-slate-700/80 border-violet-200 dark:border-slate-600 focus:border-violet-400 dark:focus:border-violet-400 rounded-xl shadow-lg backdrop-blur-sm min-h-[400px] font-mono text-sm"
                 />
               </div>
@@ -371,7 +370,6 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
         </CardContent>
       </Card>
 
-      {/* Enhanced dark mode compatible CSS for HTML content styling */}
       <style>{`
         .html-content {
           line-height: 1.7;
