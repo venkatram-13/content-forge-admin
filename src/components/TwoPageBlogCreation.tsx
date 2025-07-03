@@ -41,6 +41,22 @@ export const TwoPageBlogCreation = ({ onBlogCreated }: TwoPageBlogCreationProps)
     setCurrentPage('input');
   };
 
+  const handleBlogSetupComplete = (data: any) => {
+    // Transform the data to match the Blog interface and call onBlogCreated
+    const blog: Blog = {
+      id: data.id || '',
+      title: data.title,
+      content: data.content,
+      excerpt: data.excerpt,
+      featured_image: data.featuredImage || '',
+      created_at: data.created_at || new Date().toISOString(),
+      author: data.author || 'Admin',
+      slug: data.slug || data.title.toLowerCase().replace(/\s+/g, '-'),
+      status: data.status || 'published'
+    };
+    onBlogCreated(blog);
+  };
+
   if (currentPage === 'input') {
     return (
       <ContentInputPage 
@@ -52,10 +68,14 @@ export const TwoPageBlogCreation = ({ onBlogCreated }: TwoPageBlogCreationProps)
 
   return (
     <BlogSetupPage
-      initialContent={rewrittenContent}
-      initialTitle={rewrittenTitle}
-      onBlogCreated={onBlogCreated}
-      onBack={handleBackToInput}
+      initialData={{
+        title: rewrittenTitle,
+        content: rewrittenContent,
+        excerpt: '',
+        featuredImage: '',
+        applyLink: ''
+      }}
+      onNext={handleBlogSetupComplete}
     />
   );
 };
