@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -44,7 +43,7 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
   const [isRewriting, setIsRewriting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'preview' | 'markdown'>('preview');
+  const [previewMode, setPreviewMode] = useState<'preview' | 'html'>('preview');
   const { toast } = useToast();
 
   // Initialize form with existing blog data if editing
@@ -79,7 +78,7 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
         body: { 
           content: sourceContent, 
           inputType,
-          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Minimum 1000 words, 2) Rich in value and actionable insights, 3) Include multiple subheadings (##, ###), 4) Use bullet points and numbered lists, 5) Professional and helpful tone for job seekers, 6) Format in proper Markdown with headers and structured sections, 7) Include sections like job requirements, benefits, company culture, application process, etc."
+          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Target 800-900 words exactly, 2) Format content in HTML tags (not Markdown), 3) Use proper HTML structure with <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em> tags, 4) MUST include a dedicated section titled 'Candidate Requirements' with specific qualifications, experience levels, and prerequisites, 5) MUST include a detailed 'Required Skills' section listing technical and soft skills, 6) Include sections like job overview, responsibilities, company culture, benefits, and application process, 7) Professional and engaging tone for job seekers, 8) Use semantic HTML structure with clear headings and well-organized content."
         }
       });
 
@@ -100,7 +99,7 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
       }
 
       if (data.success && data.content) {
-        const wordCount = data.content.split(/\s+/).length;
+        const wordCount = data.content.replace(/<[^>]*>/g, '').split(/\s+/).length;
         
         console.log(`Content generated successfully with ${wordCount} words`);
         
@@ -206,19 +205,9 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
     setIsPublishing(false);
   };
 
-  const renderMarkdownPreview = (markdown: string) => {
-    // Simple markdown to HTML conversion for preview
-    return markdown
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 border-b pb-2">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>')
-      .replace(/^\* (.*$)/gim, '<li class="ml-4">$1</li>')
-      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4">$1</li>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      .replace(/^(?!<[hli])/gm, '<p class="mb-4">')
-      .replace(/(?<!>)$/gm, '</p>');
+  const renderHtmlPreview = (htmlContent: string) => {
+    // Return the HTML content directly for rendering
+    return htmlContent;
   };
 
   // Show preview if content has been generated and user wants to preview
@@ -241,15 +230,15 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
             </div>
             
             {/* Preview Toggle Tabs */}
-            <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as 'preview' | 'markdown')}>
+            <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as 'preview' | 'html')}>
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="preview" className="flex items-center gap-2">
                   <Eye className="w-4 h-4" />
                   Preview
                 </TabsTrigger>
-                <TabsTrigger value="markdown" className="flex items-center gap-2">
+                <TabsTrigger value="html" className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
-                  Markdown
+                  HTML
                 </TabsTrigger>
               </TabsList>
               
@@ -257,12 +246,12 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
                 <div className="p-6 bg-gray-50 rounded-lg max-h-96 overflow-y-auto border">
                   <div 
                     className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: renderMarkdownPreview(content) }}
+                    dangerouslySetInnerHTML={{ __html: renderHtmlPreview(content) }}
                   />
                 </div>
               </TabsContent>
               
-              <TabsContent value="markdown" className="mt-4">
+              <TabsContent value="html" className="mt-4">
                 <div className="p-4 bg-gray-50 rounded-lg max-h-96 overflow-y-auto border font-mono text-sm">
                   <pre className="whitespace-pre-wrap">{content}</pre>
                 </div>
@@ -270,7 +259,7 @@ export const CreateBlog = ({ onBlogCreated, existingBlog, isEditing = false }: C
             </Tabs>
             
             <p className="text-sm text-gray-600 mt-2">
-              Word count: {content.split(/\s+/).length} words
+              Word count: {content.replace(/<[^>]*>/g, '').split(/\s+/).length} words
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-6">

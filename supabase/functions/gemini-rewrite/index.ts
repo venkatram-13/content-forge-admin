@@ -34,7 +34,7 @@ serve(async (req) => {
       )
     }
 
-    const defaultSystemPrompt = systemPrompt || "Please rewrite this job posting content to make it more engaging and professional. Focus on making it attractive to job seekers while maintaining all important information. Write at least 1000 words with proper formatting.";
+    const defaultSystemPrompt = systemPrompt || "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Target 800-900 words exactly, 2) Format content in HTML tags (not Markdown), 3) Use proper HTML structure with <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em> tags, 4) MUST include a dedicated section titled 'Candidate Requirements' with specific qualifications, experience levels, and prerequisites, 5) MUST include a detailed 'Required Skills' section listing technical and soft skills, 6) Include sections like job overview, responsibilities, company culture, benefits, and application process, 7) Professional and engaging tone for job seekers, 8) Use semantic HTML structure with clear headings and well-organized content. Ensure the content is rich in value and provides actionable insights for potential candidates.";
 
     // If no API key, return error instead of fallback content
     if (!apiKey) {
@@ -102,19 +102,25 @@ Content to rewrite: ${content}`
       throw new Error('Generated content is too short or empty');
     }
 
-    // Extract title from the first line or heading
-    const lines = generatedContent.split('\n').filter(line => line.trim());
+    // Extract title from the first heading or line
+    const titleMatch = generatedContent.match(/<h1[^>]*>(.*?)<\/h1>|<h2[^>]*>(.*?)<\/h2>/i);
     let title = 'AI Enhanced Job Posting';
     
-    for (const line of lines) {
-      const cleanLine = line.replace(/^#+\s*/, '').trim();
-      if (cleanLine && cleanLine.length > 10 && cleanLine.length < 100) {
-        title = cleanLine;
-        break;
+    if (titleMatch) {
+      title = (titleMatch[1] || titleMatch[2]).replace(/<[^>]*>/g, '').trim();
+    } else {
+      // Fallback: try to extract from first line
+      const lines = generatedContent.split('\n').filter(line => line.trim());
+      for (const line of lines) {
+        const cleanLine = line.replace(/<[^>]*>/g, '').trim();
+        if (cleanLine && cleanLine.length > 10 && cleanLine.length < 100) {
+          title = cleanLine;
+          break;
+        }
       }
     }
 
-    const wordCount = generatedContent.split(/\s+/).length;
+    const wordCount = generatedContent.replace(/<[^>]*>/g, '').split(/\s+/).length;
     console.log('Content generated successfully:', { titleLength: title.length, wordCount });
 
     return new Response(

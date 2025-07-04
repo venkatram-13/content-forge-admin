@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
   const [rewrittenTitle, setRewrittenTitle] = useState('');
   const [isRewriting, setIsRewriting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'preview' | 'markdown'>('preview');
+  const [previewMode, setPreviewMode] = useState<'preview' | 'html'>('preview');
   const { toast } = useToast();
 
   const rewriteWithAI = async () => {
@@ -45,7 +46,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
         body: { 
           content: sourceContent, 
           inputType,
-          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Minimum 1000 words, 2) Rich in value and actionable insights, 3) Include multiple subheadings (##, ###), 4) Use bullet points and numbered lists, 5) Professional and helpful tone for job seekers, 6) Format in proper Markdown with headers and structured sections, 7) Include sections like job requirements, benefits, company culture, application process, etc. Make sure to create original, detailed content that expands significantly on the provided input."
+          systemPrompt: "You are an experienced professional blog writer specializing in job postings and career content. Rewrite the following content into a comprehensive, SEO-optimized blog post for a hiring/job platform. Requirements: 1) Target 800-900 words exactly, 2) Format content in HTML tags (not Markdown), 3) Use proper HTML structure with <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em> tags, 4) MUST include a dedicated section titled 'Candidate Requirements' with specific qualifications, experience levels, and prerequisites, 5) MUST include a detailed 'Required Skills' section listing technical and soft skills, 6) Include sections like job overview, responsibilities, company culture, benefits, and application process, 7) Professional and engaging tone for job seekers, 8) Use semantic HTML structure with clear headings and well-organized content. Ensure the content is rich in value and provides actionable insights for potential candidates."
         }
       });
 
@@ -101,14 +102,14 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
       }
 
       if (data.success && data.content) {
-        const wordCount = data.content.split(/\s+/).length;
+        const wordCount = data.content.replace(/<[^>]*>/g, '').split(/\s+/).length;
         
         console.log(`Content generated successfully with ${wordCount} words`);
         
-        if (wordCount < 1000) {
+        if (wordCount < 800 || wordCount > 1000) {
           toast({
             title: "Content Generated",
-            description: `AI generated ${wordCount} words. For longer content, try providing more detailed source material.`,
+            description: `AI generated ${wordCount} words. Target was 800-900 words.`,
             variant: "default",
           });
         } else {
@@ -150,25 +151,6 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
     onSkip();
   };
 
-  const renderMarkdownPreview = (markdown: string) => {
-    // Improved markdown to HTML conversion for preview
-    return markdown
-      .replace(/^#### (.*$)/gim, '<h4 class="text-base font-semibold mt-3 mb-2 text-gray-800 dark:text-gray-200">$1</h4>')
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-800 dark:text-gray-200">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 border-b border-gray-200 dark:border-gray-600 pb-2 text-gray-900 dark:text-gray-100">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-gray-900 dark:text-gray-100">$1</h1>')
-      .replace(/^\- (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 dark:text-gray-300 list-disc">$1</li>')
-      .replace(/^\* (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 dark:text-gray-300 list-disc">$1</li>')
-      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-1 text-gray-700 dark:text-gray-300 list-decimal">$1</li>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900 dark:text-gray-100">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="italic text-gray-800 dark:text-gray-200">$1</em>')
-      .replace(/\n\n/g, '<br><br>')
-      .replace(/\n/g, '<br>')
-      .split('<br><br>')
-      .map(paragraph => paragraph.trim() ? `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${paragraph}</p>` : '')
-      .join('');
-  };
-
   const canProceed = inputType === 'url' ? url.trim() : rawText.trim();
 
   if (showPreview && rewrittenContent) {
@@ -190,28 +172,28 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
             </div>
             
             {/* Preview Toggle Tabs */}
-            <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as 'preview' | 'markdown')}>
+            <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as 'preview' | 'html')}>
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="preview" className="flex items-center gap-2">
                   <Eye className="w-4 h-4" />
                   Preview
                 </TabsTrigger>
-                <TabsTrigger value="markdown" className="flex items-center gap-2">
+                <TabsTrigger value="html" className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
-                  Markdown
+                  HTML
                 </TabsTrigger>
               </TabsList>
               
               <TabsContent value="preview" className="mt-4">
                 <div className="p-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600">
                   <div 
-                    className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: renderMarkdownPreview(rewrittenContent) }}
+                    className="prose prose-sm max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: rewrittenContent }}
                   />
                 </div>
               </TabsContent>
               
-              <TabsContent value="markdown" className="mt-4">
+              <TabsContent value="html" className="mt-4">
                 <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg max-h-96 overflow-y-auto border border-gray-200 dark:border-slate-600 font-mono text-sm">
                   <pre className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">{rewrittenContent}</pre>
                 </div>
@@ -219,7 +201,7 @@ export const ContentInputPage = ({ onContentRewritten, onSkip }: ContentInputPag
             </Tabs>
             
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Word count: {rewrittenContent.split(/\s+/).length} words
+              Word count: {rewrittenContent.replace(/<[^>]*>/g, '').split(/\s+/).length} words
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
