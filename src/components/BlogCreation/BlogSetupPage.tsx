@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { ArrowRight, FileText, Image, Link, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { ArrowRight, FileText, Image, Link, Eye, EyeOff, Sparkles, Bold, Italic, List, ListOrdered, Type, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BlogSetupData {
@@ -69,6 +68,94 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
 
   const handleInputChange = (field: keyof BlogSetupData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const insertHtmlTag = (tag: string, closingTag?: string, placeholder?: string) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = formData.content.substring(start, end);
+    
+    let newText;
+    if (selectedText) {
+      // If text is selected, wrap it with the tag
+      newText = formData.content.substring(0, start) + 
+                `<${tag}>${selectedText}</${closingTag || tag}>` + 
+                formData.content.substring(end);
+    } else {
+      // If no text is selected, insert the tag with placeholder
+      const content = placeholder || 'Your text here';
+      newText = formData.content.substring(0, start) + 
+                `<${tag}>${content}</${closingTag || tag}>` + 
+                formData.content.substring(end);
+    }
+    
+    handleInputChange('content', newText);
+    
+    // Focus back to textarea and set cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = selectedText ? 
+        start + `<${tag}>`.length + selectedText.length + `</${closingTag || tag}>`.length :
+        start + `<${tag}>`.length + (placeholder || 'Your text here').length;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
+
+  const insertListItem = (listType: 'ul' | 'ol') => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const listHtml = listType === 'ul' ? 
+      '<ul>\n  <li>First item</li>\n  <li>Second item</li>\n  <li>Third item</li>\n</ul>' :
+      '<ol>\n  <li>First item</li>\n  <li>Second item</li>\n  <li>Third item</li>\n</ol>';
+    
+    const newText = formData.content.substring(0, start) + listHtml + formData.content.substring(start);
+    handleInputChange('content', newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + listHtml.length, start + listHtml.length);
+    }, 0);
+  };
+
+  const insertLink = () => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = formData.content.substring(start, end);
+    
+    const linkText = selectedText || 'Link text';
+    const linkHtml = `<a href="https://example.com">${linkText}</a>`;
+    
+    const newText = formData.content.substring(0, start) + linkHtml + formData.content.substring(end);
+    handleInputChange('content', newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + linkHtml.length, start + linkHtml.length);
+    }, 0);
+  };
+
+  const insertButton = () => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const buttonHtml = '<button style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease; font-size: 16px;">Call to Action</button>';
+    
+    const newText = formData.content.substring(0, start) + buttonHtml + formData.content.substring(start);
+    handleInputChange('content', newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + buttonHtml.length, start + buttonHtml.length);
+    }, 0);
   };
 
   const applyStylesToHTML = (html: string): string => {
@@ -322,6 +409,116 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
                 </div>
               </div>
               
+              <div className="bg-violet-50/50 dark:bg-slate-700/30 p-4 rounded-xl space-y-3">
+                <Label className="text-slate-700 dark:text-slate-200 font-medium text-sm">HTML Formatting Tools</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => insertHtmlTag('h1')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <Type className="w-3 h-3 mr-1" />
+                    H1
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => insertHtmlTag('h2')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <Type className="w-3 h-3 mr-1" />
+                    H2
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => insertHtmlTag('h3')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <Type className="w-3 h-3 mr-1" />
+                    H3
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={() => insertHtmlTag('strong')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <Bold className="w-3 h-3 mr-1" />
+                    Bold
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => insertHtmlTag('em')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <Italic className="w-3 h-3 mr-1" />
+                    Italic
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={() => insertListItem('ul')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <List className="w-3 h-3 mr-1" />
+                    • List
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => insertListItem('ol')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <ListOrdered className="w-3 h-3 mr-1" />
+                    1. List
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={insertLink}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <Link className="w-3 h-3 mr-1" />
+                    Link
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={() => insertHtmlTag('p', 'p', 'Your paragraph text here.')}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    P
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={insertButton}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-7"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    CTA Button
+                  </Button>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Textarea
@@ -348,15 +545,13 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
               
               <div className="bg-violet-50/50 dark:bg-slate-700/30 p-4 rounded-xl">
                 <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                  <strong>HTML Formatting Tips:</strong>
+                  <strong>Quick HTML Tips:</strong>
                 </p>
                 <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                  <li>• Use &lt;h2&gt;, &lt;h3&gt;, &lt;h4&gt; for headings</li>
-                  <li>• Use &lt;p&gt; for paragraphs</li>
-                  <li>• Use &lt;ul&gt;&lt;li&gt; for bullet points, &lt;ol&gt;&lt;li&gt; for numbered lists</li>
-                  <li>• Use &lt;strong&gt; for bold, &lt;em&gt; for italic</li>
-                  <li>• Use &lt;a href="url"&gt; for links</li>
-                  <li>• Copy the CTA button code above and customize the text as needed</li>
+                  <li>• Click the formatting buttons above to insert HTML tags automatically</li>
+                  <li>• Select text first, then click a button to wrap it with tags</li>
+                  <li>• Use the preview to see how your content will look</li>
+                  <li>• The CTA Button creates a styled button element you can customize</li>
                 </ul>
               </div>
             </div>
