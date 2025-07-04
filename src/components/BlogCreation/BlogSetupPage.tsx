@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { ArrowRight, FileText, Image, Link, Eye, EyeOff, Sparkles, Bold, Italic, List, ListOrdered, Type, Plus } from 'lucide-react';
+import { ArrowRight, FileText, Image, Link, Eye, EyeOff, Sparkles, Bold, Italic, List, ListOrdered, Type, Plus, Upload, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BlogSetupData {
   title: string;
@@ -33,6 +34,7 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
   const [wordCount, setWordCount] = useState(0);
   const [minWordCount, setMinWordCount] = useState(1000);
   const [isRewriting, setIsRewriting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const { toast } = useToast();
 
   // Move the placeholder content to a template literal to avoid JSX parsing issues
@@ -237,7 +239,7 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
     setIsRewriting(false);
   };
 
-  const handleNext = () => {
+  const publishBlog = async (status: 'published' | 'draft') => {
     if (!formData.title.trim()) {
       toast({
         title: "Title Required",
@@ -274,7 +276,67 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
       return;
     }
 
-    onNext(formData);
+    setIsPublishing(true);
+    
+    try {
+      console.log('Publishing blog with status:', status);
+
+      const { data, error } = await supabase.functions.invoke('blog-operations', {
+        body: {
+          action: 'create',
+          title: formData.title.trim(),
+          content: formData.content.trim(),
+          excerpt: formData.excerpt.trim(),
+          featuredImage: formData.featuredImage || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600&h=300&fit=crop",
+          author: 'Admin',
+          applicationLink: formData.applyLink.trim() || undefined,
+          category: undefined,
+          status
+        }
+      });
+
+      console.log('Blog operation response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`API Error: ${error.message}`);
+      }
+      
+      if (data?.error) {
+        console.error('Blog operations error:', data.error);
+        throw new Error(data.error);
+      }
+
+      if (!data?.success || !data?.blog) {
+        console.error('Invalid response from blog operations:', data);
+        throw new Error('Invalid response from blog service');
+      }
+
+      // Call onNext with the created blog data
+      onNext(data.blog);
+      
+      toast({
+        title: status === 'published' ? "Blog Published! 🎉" : "Draft Saved! 📝",
+        description: `Your blog has been ${status === 'published' ? 'published successfully' : 'saved as a draft'}.`,
+      });
+    } catch (error) {
+      console.error('Blog publish error:', error);
+      toast({
+        title: "Operation Failed",
+        description: error instanceof Error ? error.message : "There was an error saving your blog.",
+        variant: "destructive",
+      });
+    }
+    
+    setIsPublishing(false);
+  };
+
+  const handleNext = () => {
+    publishBlog('published');
+  };
+
+  const handleSaveDraft = () => {
+    publishBlog('draft');
   };
 
   return (
@@ -556,14 +618,33 @@ export const BlogSetupPage = ({ onNext, initialData }: BlogSetupPageProps) => {
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row gap-4 justify-end">
+              <Button 
+                onClick={handleSaveDraft}
+                disabled={isPublishing || !formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim()}
+                variant="outline"
+                className="flex items-center gap-2 px-6 py-3 text-lg font-semibold border-2"
+              >
+                <Save className="w-5 h-5" />
+                Save as Draft
+              </Button>
+              
               <Button 
                 onClick={handleNext}
-                disabled={!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || wordCount < minWordCount}
+                disabled={isPublishing || !formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || wordCount < minWordCount}
                 className="flex items-center gap-2 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 hover:from-violet-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 px-8 py-3 text-lg font-semibold"
               >
-                Continue to Review
-                <ArrowRight className="w-5 h-5" />
+                {isPublishing ? (
+                  <>
+                    <Upload className="w-5 h-5 animate-pulse" />
+                    Publishing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    Publish Blog
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>
