@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Search, Calendar, User, ArrowRight, Briefcase, Globe, BookOpen, Eye, Tr
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import FilterControls from '@/components/FilterControls';
+import { NewsScroll } from '@/components/NewsScroll';
 
 interface Blog {
   id: string;
@@ -154,7 +154,12 @@ const Index = () => {
             Discover amazing job opportunities, internships, and career advancement paths with our AI-enhanced job matching platform.
           </p>
         </div>
+      </div>
 
+      {/* News Scroll Component */}
+      <NewsScroll />
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Search */}
         <div className="relative max-w-2xl mx-auto mb-8">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
