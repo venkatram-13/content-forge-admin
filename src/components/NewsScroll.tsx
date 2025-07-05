@@ -55,7 +55,7 @@ export const NewsScroll = () => {
   if (topBlogs.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-r from-white/60 via-blue-50/40 to-purple-50/40 dark:from-gray-900/60 dark:via-gray-800/40 dark:to-slate-900/40 backdrop-blur-sm border-y border-gradient-to-r from-blue-200/30 via-purple-200/30 to-pink-200/30 dark:border-gray-700/50 py-6 overflow-hidden shadow-lg">
+    <div className="bg-gradient-to-r from-white/60 via-blue-50/40 to-purple-50/40 dark:from-gray-900/60 dark:via-gray-800/40 dark:to-slate-900/40 backdrop-blur-sm border-y border-gradient-to-r from-blue-200/30 via-purple-200/30 to-pink-200/30 dark:border-gray-700/50 py-6 shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
@@ -71,15 +71,12 @@ export const NewsScroll = () => {
         </div>
         
         <div 
-          className="relative"
+          className="relative overflow-hidden"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
           <div 
-            className="flex gap-6"
-            style={{
-              animation: isHovered ? 'none' : 'scroll-fast 10s linear infinite',
-            }}
+            className={`flex gap-6 w-max ${!isHovered ? 'animate-scroll-fast' : ''}`}
           >
             {/* First set of items */}
             {topBlogs.map((blog, index) => (
