@@ -75,7 +75,12 @@ export const NewsScroll = () => {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <div className={`flex gap-6 ${!isHovered ? 'animate-scroll-fast' : ''}`}>
+          <div 
+            className="flex gap-6"
+            style={{
+              animation: isHovered ? 'none' : 'scroll-fast 10s linear infinite',
+            }}
+          >
             {/* First set of items */}
             {topBlogs.map((blog, index) => (
               <Link
