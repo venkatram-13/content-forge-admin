@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Eye, TrendingUp } from 'lucide-react';
@@ -18,10 +18,59 @@ interface Blog {
 export const NewsScroll = () => {
   const [topBlogs, setTopBlogs] = useState<Blog[]>([]);
   const [isHovered, setIsHovered] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number>();
+  const positionRef = useRef(0);
+  const lastTimeRef = useRef(0);
 
   useEffect(() => {
     fetchTopBlogs();
   }, []);
+
+  useEffect(() => {
+    if (!isHovered && topBlogs.length > 0) {
+      startScrolling();
+    } else {
+      stopScrolling();
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isHovered, topBlogs.length]);
+
+  const startScrolling = () => {
+    const scroll = (timestamp: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = timestamp;
+      const deltaTime = timestamp - lastTimeRef.current;
+      
+      // Speed: move 60 pixels per second (3x faster than before)
+      const speed = 60;
+      positionRef.current += (deltaTime / 1000) * speed;
+      
+      if (scrollRef.current) {
+        const maxScroll = scrollRef.current.scrollWidth / 2; // Half because we duplicate content
+        if (positionRef.current >= maxScroll) {
+          positionRef.current = 0;
+        }
+        scrollRef.current.style.transform = `translateX(-${positionRef.current}px)`;
+      }
+      
+      lastTimeRef.current = timestamp;
+      animationRef.current = requestAnimationFrame(scroll);
+    };
+    
+    animationRef.current = requestAnimationFrame(scroll);
+  };
+
+  const stopScrolling = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    lastTimeRef.current = 0;
+  };
 
   const fetchTopBlogs = async () => {
     try {
@@ -76,7 +125,8 @@ export const NewsScroll = () => {
           onMouseLeave={() => setIsHovered(false)}
         >
           <div 
-            className={`flex gap-6 w-max ${!isHovered ? 'animate-scroll-fast' : ''}`}
+            ref={scrollRef}
+            className="flex gap-6 w-max"
           >
             {/* First set of items */}
             {topBlogs.map((blog, index) => (
