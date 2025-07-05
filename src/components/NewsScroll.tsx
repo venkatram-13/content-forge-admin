@@ -12,6 +12,7 @@ interface Blog {
   slug: string;
   category?: string;
   created_at: string;
+  featured_image?: string;
 }
 
 export const NewsScroll = () => {
@@ -26,7 +27,7 @@ export const NewsScroll = () => {
     try {
       const { data, error } = await supabase
         .from('blogs')
-        .select('id, title, views, slug, category, created_at')
+        .select('id, title, views, slug, category, created_at, featured_image')
         .eq('status', 'published')
         .order('views', { ascending: false })
         .limit(10);
@@ -54,16 +55,19 @@ export const NewsScroll = () => {
   if (topBlogs.length === 0) return null;
 
   return (
-    <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border-y border-gray-200/50 dark:border-gray-700/50 py-4 overflow-hidden">
+    <div className="bg-gradient-to-r from-white/60 via-blue-50/40 to-purple-50/40 dark:from-gray-900/60 dark:via-gray-800/40 dark:to-slate-900/40 backdrop-blur-sm border-y border-gradient-to-r from-blue-200/30 via-purple-200/30 to-pink-200/30 dark:border-gray-700/50 py-6 overflow-hidden shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center gap-4 mb-3">
+        <div className="flex items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-red-500" />
-            <span className="font-semibold text-gray-900 dark:text-gray-100">
-              Top Airing Opportunities
+            <div className="relative">
+              <TrendingUp className="w-6 h-6 text-red-500 animate-pulse" />
+              <div className="absolute -inset-1 bg-red-500/20 rounded-full animate-ping"></div>
+            </div>
+            <span className="font-bold text-lg bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent">
+              🔥 Top Airing Opportunities
             </span>
           </div>
-          <div className="h-px bg-gradient-to-r from-red-500 to-transparent flex-1"></div>
+          <div className="h-px bg-gradient-to-r from-red-500 via-orange-400 to-yellow-400 flex-1 shadow-lg"></div>
         </div>
         
         <div 
@@ -71,7 +75,7 @@ export const NewsScroll = () => {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <div className={`flex gap-6 ${!isHovered ? 'animate-scroll' : ''}`}>
+          <div className={`flex gap-6 ${!isHovered ? 'animate-scroll-fast' : ''}`}>
             {/* First set of items */}
             {topBlogs.map((blog, index) => (
               <Link
@@ -79,24 +83,32 @@ export const NewsScroll = () => {
                 to={`/blog/${blog.slug}`}
                 className="flex-shrink-0 group"
               >
-                <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg px-4 py-3 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 min-w-[320px]">
-                  <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-red-500 to-orange-500 text-white text-sm font-bold rounded-full flex-shrink-0">
+                <div className="flex items-center gap-4 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-800 dark:to-gray-800/80 rounded-xl px-5 py-4 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50 min-w-[380px] hover:scale-105 hover:border-blue-300/50 dark:hover:border-blue-600/50">
+                  <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-red-500 via-orange-500 to-yellow-500 text-white text-sm font-bold rounded-full flex-shrink-0 shadow-lg animate-pulse">
                     {index + 1}
                   </div>
                   
+                  <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden shadow-md">
+                    <img
+                      src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=200&fit=crop"}
+                      alt={blog.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+                  
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-base">
                       {blog.title}
                     </h4>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-3 mt-2">
                       {blog.category && (
-                        <Badge className={`text-xs px-2 py-0.5 ${getCategoryColor(blog.category)}`}>
+                        <Badge className={`text-xs px-2 py-1 ${getCategoryColor(blog.category)} shadow-sm`}>
                           {blog.category}
                         </Badge>
                       )}
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                        <Eye className="w-3 h-3" />
-                        {blog.views || 0}
+                      <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                        <Eye className="w-4 h-4" />
+                        <span className="font-medium">{blog.views || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -111,24 +123,32 @@ export const NewsScroll = () => {
                 to={`/blog/${blog.slug}`}
                 className="flex-shrink-0 group"
               >
-                <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg px-4 py-3 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200/50 dark:border-gray-700/50 min-w-[320px]">
-                  <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-red-500 to-orange-500 text-white text-sm font-bold rounded-full flex-shrink-0">
+                <div className="flex items-center gap-4 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-800 dark:to-gray-800/80 rounded-xl px-5 py-4 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50 min-w-[380px] hover:scale-105 hover:border-blue-300/50 dark:hover:border-blue-600/50">
+                  <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-red-500 via-orange-500 to-yellow-500 text-white text-sm font-bold rounded-full flex-shrink-0 shadow-lg animate-pulse">
                     {index + 1}
                   </div>
                   
+                  <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden shadow-md">
+                    <img
+                      src={blog.featured_image || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=200&fit=crop"}
+                      alt={blog.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+                  
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-base">
                       {blog.title}
                     </h4>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-3 mt-2">
                       {blog.category && (
-                        <Badge className={`text-xs px-2 py-0.5 ${getCategoryColor(blog.category)}`}>
+                        <Badge className={`text-xs px-2 py-1 ${getCategoryColor(blog.category)} shadow-sm`}>
                           {blog.category}
                         </Badge>
                       )}
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                        <Eye className="w-3 h-3" />
-                        {blog.views || 0}
+                      <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                        <Eye className="w-4 h-4" />
+                        <span className="font-medium">{blog.views || 0}</span>
                       </div>
                     </div>
                   </div>
